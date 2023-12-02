@@ -2,21 +2,17 @@
 
 char* int2str(int integer) {
 
-	char* pOutputstring = new char[4];
-	char* pStartOfString = pOutputstring;
+	char* poutputstring = new char[4];
 
 	while (integer != 0)
 	{
 		int Outputlastdigit = (integer % 10) + 48;
 		// assign the char to the current position of poutputstring
-		*pOutputstring = Outputlastdigit;
-		pOutputstring++;
+		*poutputstring = Outputlastdigit;
+		poutputstring++;
 		integer /= 10;
 	}
-	//Zero terminating the string 
-	
-	*pOutputstring = '\0';
-	return pStartOfString;
+	return poutputstring;
 
 }
 

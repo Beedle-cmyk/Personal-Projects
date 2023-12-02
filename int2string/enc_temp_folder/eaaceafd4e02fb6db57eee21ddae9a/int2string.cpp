@@ -14,7 +14,6 @@ char* int2str(int integer) {
 		integer /= 10;
 	}
 	//Zero terminating the string 
-	
 	*pOutputstring = '\0';
 	return pStartOfString;
 
