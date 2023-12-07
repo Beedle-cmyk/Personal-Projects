@@ -2,21 +2,38 @@
 
 char* int2str(int integer) {
 
-	char* pOutputstring = new char[4];
-	char* pStartOfString = pOutputstring;
+	// calculate how many characters are required to store
+	int temp = integer;
+
+	//begin counter at 1 to account for null terminator
+	int charCount = 1;
+
+	while (temp != 0)
+	{
+		temp /= 10;
+		charCount++;
+	}
+
+	// open a location in memory for use the size of 4 char
+	char* pOutputstring = new char[charCount];
+	//char* pStartOfString = pOutputstring;	
+	char* pEndOfString = pOutputstring + charCount;
+
+	//Zero terminating the string 
+	*pEndOfString = '\0';
+	pEndOfString--;
 
 	while (integer != 0)
 	{
+		// add 48 for ASCII conversion
 		int Outputlastdigit = (integer % 10) + 48;
 		// assign the char to the current position of poutputstring
-		*pOutputstring = Outputlastdigit;
-		pOutputstring++;
+		*pEndOfString = Outputlastdigit;
+		pEndOfString--;
 		integer /= 10;
 	}
-	//Zero terminating the string 
 	
-	*pOutputstring = '\0';
-	return pStartOfString;
+	return pOutputstring;
 
 }
 
