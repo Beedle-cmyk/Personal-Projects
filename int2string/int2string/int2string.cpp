@@ -17,7 +17,7 @@ char* int2str(int integer)
 	// open a location in memory for use the size of 4 char
 	char* pOutputString = new char[charCount];
 	//char* pStartOfString = pOutputstring;	
-	char* pEndOfString = pOutputString + charCount;
+	char* pEndOfString = pOutputString + (charCount - 1);
 
 	//Zero terminating the string 
 	*pEndOfString = '\0';
@@ -38,7 +38,7 @@ char* int2str(int integer)
 
 int main()
 {
-	char* returnstring = int2str(123456);
+	char* returnstring = int2str(1234567);
 	// Remove used memory at location once done with it
 	delete[] returnstring;
 }
