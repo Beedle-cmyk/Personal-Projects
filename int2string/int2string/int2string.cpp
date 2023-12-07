@@ -1,7 +1,7 @@
 #include <iostream>
 
-char* int2str(int integer) {
-
+char* int2str(int integer)
+{
 	// calculate how many characters are required to store
 	int temp = integer;
 
@@ -15,9 +15,9 @@ char* int2str(int integer) {
 	}
 
 	// open a location in memory for use the size of 4 char
-	char* pOutputstring = new char[charCount];
+	char* pOutputString = new char[charCount];
 	//char* pStartOfString = pOutputstring;	
-	char* pEndOfString = pOutputstring + charCount;
+	char* pEndOfString = pOutputString + charCount;
 
 	//Zero terminating the string 
 	*pEndOfString = '\0';
@@ -33,13 +33,12 @@ char* int2str(int integer) {
 		integer /= 10;
 	}
 	
-	return pOutputstring;
-
+	return pOutputString;
 }
 
 int main()
 {
-	char* returnstring = int2str(123);
+	char* returnstring = int2str(123456);
 	// Remove used memory at location once done with it
 	delete[] returnstring;
 }
