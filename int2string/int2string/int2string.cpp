@@ -2,43 +2,55 @@
 
 char* int2str(int integer)
 {
-	// calculate how many characters are required to store
-	int temp = integer;
+		// calculate how many characters are required to store
+		int temp = integer;
 
-	//begin counter at 1 to account for null terminator
-	int charCount = 1;
+		//begin counter at 1 to account for null terminator
+		int charCount = 1;
 
-	while (temp != 0)
-	{
-		temp /= 10;
-		charCount++;
-	}
+		while (temp != 0)
+		{
+			temp /= 10;
+			charCount++;
+		}
+		if (integer == 0)
+		{
+			charCount++;
+		}
 
-	// open a location in memory for use the size of 4 char
-	char* pOutputString = new char[charCount];
-	//char* pStartOfString = pOutputstring;	
-	char* pEndOfString = pOutputString + (charCount - 1);
+		// open a location in memory for use the size of 4 char
+		char* pOutputString = new char[charCount];
+		//char* pStartOfString = pOutputstring;	
+		char* pEndOfString = pOutputString + (charCount - 1);
 
-	//Zero terminating the string 
-	*pEndOfString = '\0';
-	pEndOfString--;
-
-	while (integer != 0)
-	{
-		// add 48 for ASCII conversion
-		int Outputlastdigit = (integer % 10) + 48;
-		// assign the char to the current position of poutputstring
-		*pEndOfString = Outputlastdigit;
+		//Zero terminating the string 
+		*pEndOfString = '\0';
 		pEndOfString--;
-		integer /= 10;
-	}
-	
-	return pOutputString;
+
+		if (integer == 0)
+		{
+			*pEndOfString = 48;
+
+		}
+
+		while (integer > 0)
+		{
+			// add 48 for ASCII conversion
+			int Outputlastdigit = (integer % 10) + 48;
+			// assign the char to the current position of poutputstring
+			*pEndOfString = Outputlastdigit;
+			pEndOfString--; 
+			integer /= 10;
+		}
+		
+
+		return pOutputString;
 }
 
 int main()
 {
-	char* returnstring = int2str(1234567);
+
+	char* returnstring = int2str(0);
 	// Remove used memory at location once done with it
 	delete[] returnstring;
 }
