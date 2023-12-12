@@ -2,12 +2,25 @@
 
 char* int2str(int integer)
 {
-		// calculate how many characters are required to store
-		int temp = integer;
-
 		//begin counter at 1 to account for null terminator
 		int charCount = 1;
 
+		//setting negative flag where "if == 1" then the value is negative
+		int Negative = 0;
+
+
+		// check if number is a negative value
+		if (integer < 0)
+		{
+			//convert number into positive value so that it meets conditions for loop
+			integer = integer * -1;
+			charCount++;
+			Negative = 1;
+		}
+
+
+		// calculate how many characters are required to store
+		int temp = integer;
 		while (temp != 0)
 		{
 			temp /= 10;
@@ -18,20 +31,23 @@ char* int2str(int integer)
 			charCount++;
 		}
 
+
 		// open a location in memory for use the size of 4 char
 		char* pOutputString = new char[charCount];
-		//char* pStartOfString = pOutputstring;	
+
+		// starting at the last position in memory
 		char* pEndOfString = pOutputString + (charCount - 1);
 
 		//Zero terminating the string 
 		*pEndOfString = '\0';
 		pEndOfString--;
 
+		// if the value is zero then return value will automatically be 48
 		if (integer == 0)
 		{
 			*pEndOfString = 48;
-
 		}
+
 
 		while (integer > 0)
 		{
@@ -42,7 +58,11 @@ char* int2str(int integer)
 			pEndOfString--; 
 			integer /= 10;
 		}
-		
+		if (Negative == 1)
+		{
+			//the starting value will be the ASCII value of "-"
+			*pEndOfString = 45;
+		}
 
 		return pOutputString;
 }
@@ -50,7 +70,7 @@ char* int2str(int integer)
 int main()
 {
 
-	char* returnstring = int2str(0);
+	char* returnstring = int2str(-279);
 	// Remove used memory at location once done with it
 	delete[] returnstring;
 }
