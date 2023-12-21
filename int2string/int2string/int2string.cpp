@@ -67,12 +67,26 @@ char* int2str(int integer)
 		return pOutputString;
 }
 
+void testint2str(int Test, const char* expectedString)
+{
+	char* actualString = int2str(Test);
+	int comparison = strcmp(actualString, expectedString);
+
+	if (comparison != 0)
+	{
+		std::cout << "Error: " << actualString << " is not equal to " << expectedString;
+	}
+
+	// Remove used memory at location once done with it
+	delete[] actualString;
+
+}
+
 int main()
 {
-
-	char* returnstring = int2str(-279);
-	// Remove used memory at location once done with it
-	delete[] returnstring;
+	testint2str(123, "123");
+	testint2str(-123, "-123");
+	testint2str(0, "0");
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
