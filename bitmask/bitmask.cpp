@@ -19,7 +19,7 @@ using namespace std;
 
 // Checking for 1 setting, C++ #define hex
 
-
+/*
 void check(int Mask, int Value)
 {
 
@@ -42,9 +42,26 @@ void check(int Mask, int Value)
 
 	}
 }
-
+*/
 
 void printSettings(int Settings)
+{
+	int Mask = 7;
+
+	int Result = Settings & Mask;
+
+	if (Result)
+	{
+		cout << Result;
+	}
+	else
+	{
+		cout << "No";
+	}
+
+}
+
+void TestFunction()
 {
 
 }
@@ -52,6 +69,6 @@ void printSettings(int Settings)
 
 int main() 
 {
-	check(7, 5);
+	printSettings(0x80);
 	return 0;
 }
