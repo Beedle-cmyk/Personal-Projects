@@ -1,29 +1,102 @@
-// HelloWorld.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
+#define zeroInASCII 48
+#define minusSignInASCII 45
 
-char* int2str(int integer) {
+char* int2str(int integer)
+{
+		//begin counter at 1 to account for null terminator
+		int charCount = 1;
 
-	char* poutputstring = new char[4];
+		//setting negative flag where False then the value is negative
+		bool isNegative = false;
 
-	while (integer != 0)
+
+		// check if number is a negative value
+		if (integer < 0)
+		{
+			//convert number into positive value so that it meets conditions for loop
+			integer *= -1;
+			charCount++;
+			isNegative = true;
+		}
+
+
+		if (integer == 0)
+		{
+			charCount++;
+		}
+		else
+		{
+			// calculate how many characters are required to store
+			int temp = integer;
+			while (temp != 0)
+			{
+				temp /= 10;
+				charCount++;
+			}
+		}
+
+		// allocate memory for the output string
+		char* pOutputString = new char[charCount];
+
+		// starting at the last position in memory because the least significant digit needs to go to the right most position in the string 
+		char* pEndOfString = pOutputString + (charCount - 1);
+
+		//Zero terminating the string 
+		*pEndOfString = '\0';
+		pEndOfString--;
+
+		// if the value is zero then return value will automatically be 48
+		if (integer == 0)
+		{
+			*pEndOfString = zeroInASCII;
+		}
+		else
+		{
+			while (integer > 0)
+			{
+				// add 48 for ASCII conversion
+				int Outputlastdigit = (integer % 10) + zeroInASCII;
+				// assign the char to the current position of poutputstring
+				*pEndOfString = Outputlastdigit;
+				pEndOfString--;
+				integer /= 10;
+			}
+		}
+
+		if (isNegative == true)
+		{
+			//the starting value will be the ASCII value of "-"
+			*pEndOfString = minusSignInASCII;
+		}
+
+		return pOutputString;
+}
+
+void testint2str(int Test, const char* expectedString)
+{
+	char* actualString = int2str(Test);
+	int comparison = strcmp(actualString, expectedString);
+
+	if (comparison != 0)
 	{
-		int LastDigit = (integer % 10) + 48;
-
-
+		std::cout << "Error: " << actualString << " is not equal to " << expectedString << std::endl;
 	}
-	return poutputstring;
+	else
+	{
+		std::cout << "Pass " << actualString << " is equal to " << expectedString << std::endl;
+	}
+
+	// Remove used memory at location once done with it
+	delete[] actualString;
 
 }
 
 int main()
 {
-	// std::cout << "Hello World!\n";
-	// std::cout << "Hello World!\n";
-	char* returnstring = int2str(123);
-	delete[] returnstring;
-
+	testint2str(123, "123");
+	testint2str(-123, "-123");
+	testint2str(0, "0");
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
