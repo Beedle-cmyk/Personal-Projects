@@ -1,41 +1,45 @@
 #include <iostream>
+#define zeroInASCII 48
+#define minusSignInASCII 45
 
 char* int2str(int integer)
 {
 		//begin counter at 1 to account for null terminator
 		int charCount = 1;
 
-		//setting negative flag where "if == 1" then the value is negative
-		int Negative = 0;
+		//setting negative flag where False then the value is negative
+		bool isNegative = false;
 
 
 		// check if number is a negative value
 		if (integer < 0)
 		{
 			//convert number into positive value so that it meets conditions for loop
-			integer = integer * -1;
+			integer *= -1;
 			charCount++;
-			Negative = 1;
+			isNegative = true;
 		}
 
 
-		// calculate how many characters are required to store
-		int temp = integer;
-		while (temp != 0)
-		{
-			temp /= 10;
-			charCount++;
-		}
 		if (integer == 0)
 		{
 			charCount++;
 		}
+		else
+		{
+			// calculate how many characters are required to store
+			int temp = integer;
+			while (temp != 0)
+			{
+				temp /= 10;
+				charCount++;
+			}
+		}
 
-
-		// open a location in memory for use the size of 4 char
+		// allocate memory for the output string
 		char* pOutputString = new char[charCount];
 
-		// starting at the last position in memory
+		// starting at the last position in memory because the least significant digit needs to go to the right most position in the string 
 		char* pEndOfString = pOutputString + (charCount - 1);
 
 		//Zero terminating the string 
@@ -45,23 +49,25 @@ char* int2str(int integer)
 		// if the value is zero then return value will automatically be 48
 		if (integer == 0)
 		{
-			*pEndOfString = 48;
+			*pEndOfString = zeroInASCII;
 		}
-
-
-		while (integer > 0)
+		else
 		{
-			// add 48 for ASCII conversion
-			int Outputlastdigit = (integer % 10) + 48;
-			// assign the char to the current position of poutputstring
-			*pEndOfString = Outputlastdigit;
-			pEndOfString--; 
-			integer /= 10;
+			while (integer > 0)
+			{
+				// add 48 for ASCII conversion
+				int Outputlastdigit = (integer % 10) + zeroInASCII;
+				// assign the char to the current position of poutputstring
+				*pEndOfString = Outputlastdigit;
+				pEndOfString--;
+				integer /= 10;
+			}
 		}
-		if (Negative == 1)
+
+		if (isNegative == true)
 		{
 			//the starting value will be the ASCII value of "-"
-			*pEndOfString = 45;
+			*pEndOfString = minusSignInASCII;
 		}
 
 		return pOutputString;
@@ -74,7 +80,11 @@ void testint2str(int Test, const char* expectedString)
 
 	if (comparison != 0)
 	{
-		std::cout << "Error: " << actualString << " is not equal to " << expectedString;
+		std::cout << "Error: " << actualString << " is not equal to " << expectedString << std::endl;
+	}
+	else
+	{
+		std::cout << "Pass " << actualString << " is equal to " << expectedString << std::endl;
 	}
 
 	// Remove used memory at location once done with it
