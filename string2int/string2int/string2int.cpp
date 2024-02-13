@@ -1,62 +1,53 @@
 #include <iostream>
+#define zeroInASCII 48
+#define minusSignInASCII 45
 
-int* str2int(const char* string)
+int str2int(const char* pInputString)
 {
-	//decleration of index representing the position in the string
-	int i = 0;
-	int Negative = 0;
-
-	if (string[i] == 45)
-	{
-		Negative = 1;
-	}
-
-	//finding the amount of characters in the string
-	while (string[i] != '\0')
-	{
-		i += 1;
-	}
 	//decreasing value as to not start at the null pointer (therefore start at the next value over)
-	i--;
+	int currentStringPosition = strlen(pInputString) - 1;
+	int isNegativeNumber = false;
 
-	//allocating memory to store an integer
-	int* pOutputInteger = new int;
+	if (pInputString[0] == minusSignInASCII)
+	{
+		isNegativeNumber = true;
+	}
 
 	//setting up a coefficient change from tenths to hundredths, etc
 	int coefficient = 1;
-	int total = 0;
+	int OutputInteger = 0;
 
-	while (i > -1 + Negative)
+	while (currentStringPosition > -1 + isNegativeNumber)
 	{
 		//decreasing by 48 to obtain integer ASCII value
-		int OutputInteger = coefficient*(string[i] - 48);
-		total += OutputInteger;
-		*pOutputInteger = total;
+		int temp = coefficient * (pInputString[currentStringPosition] - zeroInASCII);
+		OutputInteger += temp;
 		coefficient *= 10;
-		i--;
+		currentStringPosition--;
 	}
 
-	if (Negative == 1)
+
+	if (isNegativeNumber == true)
 	{
-		*pOutputInteger = total * -1;
+		OutputInteger *= -1;
 
 	}
-	return pOutputInteger;
+	return OutputInteger;
 }
 
 void teststr2int(const char* Test, int expectedInteger) 
 {
-	int* actualInteger = str2int(Test);
-	int comparison = actualInteger - expectedInteger;
+	int actualInteger = str2int(Test);
 
-	if (comparison != 0)
+	if (actualInteger != expectedInteger)
 	{
-		std::cout << "Error:" << actualInteger << " is not equal to " << expectedInteger;
+		std::cout << "Error:" << actualInteger << " is not equal to " << expectedInteger << std::endl;
+	}
+	else
+	{
+		std::cout << "Pass " << actualInteger << " is equal to " << expectedInteger << std::endl;
 	}
 	
-
-	delete[] actualInteger;
-
 }
 
 int main()
