@@ -1,0 +1,8 @@
+Ctrl R R 
+-Search and Replace
+
+Ctrl K U
+-get rid of comments
+
+Ctrl K C
+-Comment out space
