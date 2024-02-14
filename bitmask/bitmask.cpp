@@ -21,25 +21,20 @@ This function should receive an int which contains many settings and should prin
 #define settingIsHappy = 0x80
 */
 
-void printSettings(int Settings)
+/*
+Check the provided int for 8 settings, return an integer with all the true settings set to 1
+E.g.: when bitmaskedSettings == 0xC0, return value is 0xC0
+when bitmaskedSettings == 0x80AC00C0, return value is 0xC0
+compare in test function with resultant value 
+test number with 0th and 1st bit set with other stuff
+Expand each nibble
+*/
+
+int getTrueSettings(int bitmaskedSettings)
 {
+
 	int Mask = 7;
-
-	int Result = Settings & Mask;
-
-	if (Result)
-	{
-		cout << Result;
-	}
-	else
-	{
-		cout << "No";
-	}
-
-}
-
-void TestFunction()
-{
+	
 
 
 }
@@ -47,6 +42,6 @@ void TestFunction()
 
 int main() 
 {
-	printSettings(6);
+	getTrueSettings(0x3);
 	return 0;
 }
