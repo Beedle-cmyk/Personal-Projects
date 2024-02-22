@@ -30,18 +30,37 @@ test number with 0th and 1st bit set with other stuff
 Expand each nibble
 */
 
+void printSettings(int Settings)
+{
+	int Mask = 7;
+
+	int Result = Mask & Settings;
+	int counter = 1;
+
+	for (int i = 0; i < Result; i++)
+	{
+		if (counter & Result)
+		{
+			cout << counter << endl;
+		}
+		counter*=2;
+	}
+
+}
+
 int getTrueSettings(int bitmaskedSettings)
 {
 
 	int Mask = 7;
-	
 
+	
+	return 0;
 
 }
 
 
 int main() 
 {
-	getTrueSettings(0x3);
+	printSettings();
 	return 0;
 }
