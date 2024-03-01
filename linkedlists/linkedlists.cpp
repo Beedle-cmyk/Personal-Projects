@@ -1,3 +1,5 @@
+#include <iostream>
+
 /*
 Create a header file that defines a class called linked list
 Learn what a header file is
@@ -18,7 +20,6 @@ remove() take away a node
 clear /Empties l
 */
 
-#include <iostream>
 
 int main()
 {
