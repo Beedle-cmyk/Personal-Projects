@@ -9,41 +9,7 @@ using namespace std;
 #define settingIsAwake      0x40
 #define settingIsHappy      0x80
 
-/*
-This function should receive an int which contains many settings and should print one statement per setting, indicating whether or not the setting is set. E.g., one print line per setting:
-#define settingIsNightTime = 0x1
-#define settingIsRain = 0x2
-#define settingIs6PM = 0x04
-#define settingIsAreaClear = 0x08
-#define settingIsTornado = 0x10
-#define settingIsAlive = 0x20
-#define settingIsAwake = 0x40
-#define settingIsHappy = 0x80
-*/
-
-void printSettings(int Settings)
-{
-	int Mask = 7;
-
-	int Result = Mask & Settings;
-	int bitValue = 1;
-
-	for (int i = 0; i < 8; i++)
-	{
-		if (bitValue & Result)
-		{
-			cout << bitValue << endl;
-		}
-
-		else
-		{
-			cout << 0 << endl;
-		}
-
-		bitValue *= 2;
-	}
-
-}
+#define numberOfSettings    8
 
 /*
 Check the provided int for 8 settings, return an integer with all the true settings set to 1
@@ -59,13 +25,13 @@ int getTrueSettings(int bitmaskedSettings)
 	int bitValue = 1;
 	int newValue = 0;
 
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < numberOfSettings; i++)
 	{
 		if (bitValue & bitmaskedSettings)
 		{
 			newValue += bitValue;
 		}
-		bitValue *= 2;
+		bitmaskedSettings << 1;
 	}
 
 	return newValue;
@@ -89,10 +55,9 @@ void TestFunction(int Test, int expectedValue)
 
 int main()
 {
-
 	TestFunction(0xC0, 0xC0);
 	TestFunction(0x80AC00C0, 0xC0);
-	TestFunction(0xFFFF, 255);
+	TestFunction(0xFFFF, 0xFF);
 	TestFunction(8, 8);
 
 	return 0;
