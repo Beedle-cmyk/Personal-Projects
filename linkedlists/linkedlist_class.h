@@ -2,18 +2,30 @@
 
 namespace linkedlist
 {
-	class AddNode
+	class List
 	{
-	public:
-		node* node();
+	private:
+
+		struct node
+		{
+			int data;
+			node* next;
+
+		};
+		typedef struct node* nodePtr;
+
+		nodePtr head;
+		nodePtr curr;
+		nodePtr temp;
 
 
-	};
-	class Counter
-	{
 	public:
-		int count();
-	};
+
+		List();
+		void AddNode(int addData);
+		void DeleteNode(int delData);
+		void PrintList();
+	}
 	
 
 }

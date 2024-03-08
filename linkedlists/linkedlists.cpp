@@ -1,4 +1,6 @@
 #include <iostream>
+#include "linkedlist_class.h"
+using namespace linkedlist;
 
 /*
 Create a header file that defines a class called linked list
@@ -19,6 +21,13 @@ remove() take away a node
 
 clear /Empties l
 */
+
+List::List() {
+    head = NULL;
+    curr = NULL;
+    temp = NULL;
+}
+
 
 
 int main()
