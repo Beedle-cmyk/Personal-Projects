@@ -1,5 +1,6 @@
 #pragma once
 
+//Creation of a class called List with namespace linkedlist
 namespace linkedlist
 {
 	class List
@@ -12,12 +13,11 @@ namespace linkedlist
 			node* next;
 
 		};
-		typedef struct node* nodePtr;
 
-		nodePtr head;
-		nodePtr curr;
-		nodePtr temp;
 
+		node* head;
+		node* curr;
+		node* temp;
 
 	public:
 
@@ -25,7 +25,7 @@ namespace linkedlist
 		void AddNode(int addData);
 		void DeleteNode(int delData);
 		void PrintList();
-	}
+	};
 	
 
 }
