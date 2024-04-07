@@ -1,7 +1,7 @@
 #include <iostream>
 #include "linkedlist_class.h"
 using namespace std;
-using namespace linkedlist;
+using namespace BeedlecmykInterviewQuestions;
 
 /*
 Create a header file that defines a class called linked list
@@ -23,13 +23,11 @@ remove() take away a node
 clear /Empties l
 */
 
-List::List() {
-    head = NULL;
-    curr = NULL;
-    temp = NULL;
+LinkedList::LinkedList() {
+    pHead = NULL;
 }
 
-void List::AddNode(int addData) 
+void LinkedList::AddNode(int addData)
 {
     node* n = new node;
     n->next = NULL;
@@ -38,71 +36,116 @@ void List::AddNode(int addData)
     //Checking to see if there is already an item/data in the list
     //if so advance through the list until a NULL/ BLANK NODE is reached and replace that node with the new one
     //else if the node is already blank than the start is now the added node
-    if (head != NULL)
+    if (pHead != NULL)
     {
-        curr = head;
-        while (curr->next != NULL)
+        node* pCurrent = pHead;
+        while (pCurrent->next != NULL)
         {
-            curr = curr->next;
+            pCurrent = pCurrent->next;
         }
-        curr->next = n;
+        pCurrent->next = n;
     }
     else
     {
-        head = n;
+        pHead = n;
     }
 }
 
-void List::DeleteNode(int delData) 
+void LinkedList::DeleteNode(int delData)
 {
     node* delPtr = NULL;
-    temp = head;
-    curr = head;
-    while (curr != NULL and curr->data != delData)
+    node* pTemp = pHead;
+    node* pCurrent = pHead;
+    while (pCurrent != NULL and pCurrent->data != delData)
     {
-        temp = curr;
-        curr = curr->next;
+        pTemp = pCurrent;
+        pCurrent = pCurrent->next;
     }
-    if (curr == NULL)
+    if (pCurrent == NULL)
     {
         std::cout << delData << "Was not in the list" << std::endl;
         delete delPtr;
     }
     else
     {
-        delPtr = curr;
-        curr = curr->next;
-        temp->next = curr;
-        if (delPtr == head)
+        delPtr = pCurrent;
+        pCurrent = pCurrent->next;
+        pTemp->next = pCurrent;
+        if (delPtr == pHead)
         {
-            head = head->next;
-            temp = NULL;
+            pHead = pHead->next;
+            pTemp = NULL;
         }
         delete delPtr;
         std::cout << "The value " << delData << "was deleted" << std::endl;
     }
 }
 
-void List::PrintList()
+void LinkedList::PrintList()
 {
-    curr = head;
-    while (curr != NULL)
+    node* pCurrent = pHead;
+    while (pCurrent != NULL)
     {
-        std::cout << curr->data << std::endl;
-        curr = curr->next;
+        std::cout << pCurrent->data << std::endl;
+        pCurrent = pCurrent->next;
     }
 }
 
+void LinkedList::ReverseList()
+{
+    node* pCurrent = pHead;
+    node* pPrev = NULL;
 
+    while (pCurrent != NULL)
+    {
+        node* Temp = pCurrent->next;
+        pCurrent->next = pPrev;
+        pPrev = pCurrent;
+        pCurrent = Temp;
+    }
+
+}
+
+int LinkedList::CountList()
+{
+    node* pCurrent = pHead;
+    int count = 0;
+    while (pCurrent != NULL)
+    {
+        count += 1;
+        pCurrent = pCurrent->next;
+    }
+    cout << "Number of items in list:" << count << endl;
+    return count;
+}
+
+LinkedList::~LinkedList()
+{
+    node* pCurrent = pHead;
+    while (pCurrent != NULL) 
+    {
+        node* pTemp = pCurrent->next;
+        delete pCurrent;
+        pCurrent = pTemp;
+    }
+    pHead = NULL;
+}
 
 int main()
 {
-    List Me;
+    LinkedList Me;
+    Me.AddNode(3);
+    Me.AddNode(5);
+    Me.AddNode(7);
+    Me.AddNode(9);
+    Me.PrintList();
+    Me.CountList();
+    Me.~LinkedList();
     Me.AddNode(3);
     Me.AddNode(5);
     Me.AddNode(7);
     Me.PrintList();
-
-    Me.DeleteNode(3);
+    printf("vvvvvvvvvvvvvvv\n");
+    Me.ReverseList();
     Me.PrintList();
 }
