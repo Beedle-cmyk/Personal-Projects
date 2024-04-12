@@ -1,31 +1,25 @@
 #pragma once
 
 //Creation of a class called List with namespace linkedlist
-namespace linkedlist
+namespace BeedlecmykInterviewQuestions
 {
-	class List
+	class LinkedList
 	{
 	private:
-
 		struct node
 		{
 			int data;
 			node* next;
-
 		};
-
-
-		node* head;
-		node* curr;
-		node* temp;
+		node* pHead;
 
 	public:
-
-		List();
+		LinkedList();
+		~LinkedList();
 		void AddNode(int addData);
 		void DeleteNode(int delData);
 		void PrintList();
+		int CountList();
+		void ReverseList();
 	};
-	
-
 }
