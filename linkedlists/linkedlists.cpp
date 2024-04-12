@@ -95,14 +95,16 @@ void LinkedList::ReverseList()
 {
     node* pCurrent = pHead;
     node* pPrev = NULL;
+    node* Temp = NULL;
 
     while (pCurrent != NULL)
     {
-        node* Temp = pCurrent->next;
+        Temp = pCurrent->next;
         pCurrent->next = pPrev;
         pPrev = pCurrent;
         pCurrent = Temp;
     }
+    pHead = pPrev;
 
 }
 
