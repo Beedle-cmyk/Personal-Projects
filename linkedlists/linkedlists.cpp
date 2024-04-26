@@ -108,6 +108,24 @@ void LinkedList::ReverseList()
 
 }
 
+//7  5  3
+
+LinkedList::node* LinkedList::ReverseRecursively(node* pCurrent)
+{
+
+
+    if (pCurrent == NULL || pCurrent->next == NULL)
+    {
+        return pCurrent;
+    }
+
+    node* reversedLidHead = ReverseRecursively(pCurrent->next);
+    pCurrent->next->next = pCurrent;
+    pCurrent->next = NULL;
+    return reversedLidHead;
+
+}
+
 int LinkedList::CountList()
 {
     node* pCurrent = pHead;
@@ -140,7 +158,7 @@ int main()
     Me.AddNode(5);
     Me.AddNode(7);
     Me.AddNode(9);
-    Me.PrintList();
+    Me.PrintList(); 
     Me.CountList();
     Me.~LinkedList();
     Me.AddNode(3);
@@ -149,5 +167,7 @@ int main()
     Me.PrintList();
     printf("vvvvvvvvvvvvvvv\n");
     Me.ReverseList();
+    Me.PrintList();
+    Me.ReverseRecursively();
     Me.PrintList();
 }
