@@ -1,0 +1,43 @@
+git clone URL
+-copies a remote repo locally & makes it usable for editing
+
+git add . (you can do *.cpp) like a pattern
+-adds all files from current directory (Except gitignore)
+
+git commit -m "message"
+-creates a message outlining changes your making 
+
+git push
+-pushes your commit to the remote (server)
+
+git checkout -b users/beedle-cmyk/int2string
+-creates a new local branch 
+
+ git push --set-upstream origin users/beedle-cmyk/int2string
+-creates a remote branch
+
+git checkout users/beedle-cmyk/int2string
+-changes branch/checkout local branch
+
+git push origin --delete users/beedle-cmyk/int2string
+-Delete the remote branch
+
+git checkout -D users/beedle-cmyk/int2string
+-Delete the local Branch
+
+git reset --hard
+-Revert all changes and reset branch to remote state
+
+git reset
+-Unstage a <filename> or . (recurse subtree)
+
+git add --> git commit ---> git push
+
+<Favourite Texteditor> FILENAME
+-Open file using git
+
+
+
+
+
+
