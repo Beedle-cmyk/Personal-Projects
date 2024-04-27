@@ -108,22 +108,19 @@ void LinkedList::ReverseList()
 
 }
 
-//7  5  3
 
 LinkedList::node* LinkedList::ReverseRecursively(node* pCurrent)
 {
-
-
     if (pCurrent == NULL || pCurrent->next == NULL)
     {
         return pCurrent;
     }
 
-    node* reversedLidHead = ReverseRecursively(pCurrent->next);
+    node* reversedListHead = ReverseRecursively(pCurrent->next);
     pCurrent->next->next = pCurrent;
     pCurrent->next = NULL;
-    return reversedLidHead;
-
+    pHead = reversedListHead;
+    return reversedListHead;
 }
 
 int LinkedList::CountList()
@@ -151,23 +148,29 @@ LinkedList::~LinkedList()
     pHead = NULL;
 }
 
+LinkedList::node* LinkedList::ReturnHead()
+{
+    return pHead;
+}
+
 int main()
 {
-    LinkedList Me;
-    Me.AddNode(3);
-    Me.AddNode(5);
-    Me.AddNode(7);
-    Me.AddNode(9);
-    Me.PrintList(); 
-    Me.CountList();
-    Me.~LinkedList();
-    Me.AddNode(3);
-    Me.AddNode(5);
-    Me.AddNode(7);
-    Me.PrintList();
-    printf("vvvvvvvvvvvvvvv\n");
-    Me.ReverseList();
-    Me.PrintList();
-    Me.ReverseRecursively();
-    Me.PrintList();
+    LinkedList InstantiatedObject;
+    InstantiatedObject.AddNode(3);
+    InstantiatedObject.AddNode(5);
+    InstantiatedObject.AddNode(7);
+    InstantiatedObject.AddNode(9);
+    InstantiatedObject.PrintList(); 
+    InstantiatedObject.CountList();
+    InstantiatedObject.~LinkedList();
+    InstantiatedObject.AddNode(3);
+    InstantiatedObject.AddNode(5);
+    InstantiatedObject.AddNode(7);
+    InstantiatedObject.PrintList();
+    printf("\n");
+    InstantiatedObject.ReverseList();
+    InstantiatedObject.PrintList();
+    printf("\n");
+    InstantiatedObject.ReverseRecursively(InstantiatedObject.ReturnHead());
+    InstantiatedObject.PrintList();
 }
