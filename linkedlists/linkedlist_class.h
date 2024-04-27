@@ -1,6 +1,5 @@
 #pragma once
 
-//Creation of a class called List with namespace linkedlist
 namespace BeedlecmykInterviewQuestions
 {
 	class LinkedList
