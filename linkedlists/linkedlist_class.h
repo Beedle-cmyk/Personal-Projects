@@ -22,5 +22,6 @@ namespace BeedlecmykInterviewQuestions
 		int CountList();
 		void ReverseList();
 		node* ReverseRecursively(node* Node);
+		node* ReturnHead();
 	};
 }
