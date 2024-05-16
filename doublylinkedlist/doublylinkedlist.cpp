@@ -1,20 +1,124 @@
-// doublylinkedlist.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
+#include "doublylinkedlist.h"
+using namespace std;
+
+DoublyLinkedList::DoublyLinkedList() 
+{
+    pHead = NULL;
+}
+
+void DoublyLinkedList::InsertFront(int addData)
+{
+    node* n = new node;
+    n->next = pHead;
+    n->prev = NULL;
+    n->data = addData;
+
+
+    if (pHead != NULL)
+    {
+        pHead->prev = n;
+    }
+    pHead = n;
+}
+
+void DoublyLinkedList::PrintForwards()
+{
+    node* pCurrent = pHead;
+    while (pCurrent != NULL)
+    {
+        std::cout << pCurrent->data << std::endl;
+        pCurrent = pCurrent->next;
+    }
+}
+
+void DoublyLinkedList::PrintBackwards()
+{
+    node* pCurrent = pHead;
+    while (pCurrent->next != NULL)
+    {
+        pCurrent = pCurrent->next;
+    }
+    while (pCurrent != NULL)
+    {
+        std::cout << pCurrent->data << std::endl;
+        pCurrent = pCurrent->prev;
+    }
+}
+
+void DoublyLinkedList::DeleteNode(int delData)
+{
+    node* delPtr = NULL;
+    node* pTemp = pHead;
+    node* pCurrent = pHead;
+    node* ABC = NULL;
+    while (pCurrent != NULL and pCurrent->data != delData)
+    {
+        pTemp = pCurrent;
+        pCurrent = pCurrent->next;
+    }
+    if (pCurrent == NULL)
+    {
+        std::cout << delData << "Was not in the list" << std::endl;
+        delete delPtr;
+    }
+    delPtr = pCurrent;
+    if (delPtr == pHead)
+    {
+        pHead = pHead->next;
+        pHead->prev = NULL;
+        pTemp = NULL;
+        delete delPtr;
+        std::cout << "The value " << delData << "was deleted" << std::endl;
+    }
+    else
+    {
+        ABC = pCurrent->prev;
+        pCurrent = pCurrent->next;
+        pTemp->next = pCurrent;
+        pCurrent->prev = ABC;
+        delete delPtr;
+        std::cout << "The value " << delData << "was deleted" << std::endl;
+    }
+}
+
+int DoublyLinkedList::CountList()
+{
+    node* pCurrent = pHead;
+    int count = 0;
+    while (pCurrent != NULL)
+    {
+        count += 1;
+        pCurrent = pCurrent->next;
+    }
+    cout << "Number of items in list:" << count << endl;
+    return count;
+}
+
+DoublyLinkedList::~DoublyLinkedList()
+{
+    node* pCurrent = pHead;
+    while (pCurrent != NULL)
+    {
+        node* pTemp = pCurrent->next;
+        delete pCurrent;
+        pCurrent = pTemp;
+    }
+    pHead = NULL;
+}
+
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    DoublyLinkedList InstantiatedObject;
+    InstantiatedObject.InsertFront(3);
+    InstantiatedObject.InsertFront(4);
+    InstantiatedObject.InsertFront(5);
+    InstantiatedObject.PrintForwards();
+    InstantiatedObject.CountList();
+    InstantiatedObject.PrintBackwards();
+    InstantiatedObject.~DoublyLinkedList();
+    InstantiatedObject.CountList();
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
