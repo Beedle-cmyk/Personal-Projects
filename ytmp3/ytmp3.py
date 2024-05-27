@@ -4,27 +4,32 @@ from pytube.exceptions import VideoUnavailable
 
 def titleStringTrim(Object):
     #Replaces string text python does not like from the title
-    newString = Object.title
-    newString = newString.replace('"',"")
-    newString = newString.replace('\\', '')
-    newString = newString.replace('/', '')
-    newString = newString.replace(':', '')
-    return newString
+    newTitle = Object.title
+    newTitle = newTitle.replace('"',"")
+    newTitle = newTitle.replace('\\', '')
+    newTitle = newTitle.replace('/', '')
+    newTitle = newTitle.replace(':', '')
+    return newTitle
 
 def doPlaylist(ytLink):
-        
-        playlist = Playlist(ytLink)
-        for video in playlist.videos:
-            try:
-                #Obtaining the stream with the highest abr (average bit rate)
-                #The highest abr always contains the itag = 251  
-                stream = video.streams.get_by_itag(251)
-                stream.download("C:\Github\Personal-Projects\ytmp3\YTdownloads\Playlist",titleStringTrim(video)+".mp3")
-                print(f'Downloaded: {video.title}')
-            except VideoUnavailable:
-                print(f"Video {video.title} is unavaialable, skipping.")
-            except:
-                print("Error")
+        try:
+            playlist = Playlist(ytLink)
+            counter = 1
+            print(f"Started Download of Playlist:{playlist.title}")
+            for video in playlist.videos:
+                try:
+                    #Obtaining the stream with the highest abr (average bit rate)
+                    #The highest abr always contains the itag = 251  
+                    stream = video.streams.get_by_itag(251)
+                    stream.download("C:\Github\Personal-Projects\ytmp3\YTdownloads\Playlist",titleStringTrim(video)+".mp3")
+                    print(f"Downloaded: {video.title} [{counter}/{len(playlist.videos)}]")
+                    counter += 1
+                except VideoUnavailable:
+                    print(f"Video {video.title} is unavaialable, skipping.")
+                except:
+                    print(f"Error Downloading {video.title}")
+        except:
+            print("Error: Problem with link. Please Try Again")
     
 
 def Download(ytLink):
@@ -33,18 +38,21 @@ def Download(ytLink):
     if "&list=" in ytLink:
         doPlaylist(ytLink)
     else:
-        youtube = YouTube(ytLink)
         try:
-            #Obtaining the stream with the highest abr (average bit rate)
-            #The highest abr for audio always contains the itag = 251
-            stream = youtube.streams.get_by_itag(251)
-            print(f"Downloading: {youtube.title}.....")
-            stream.download("C:\Github\Personal-Projects\ytmp3\YTdownloads",titleStringTrim(youtube)+".mp3")
-            print(f"Downloaded: {youtube.title}")
-        except VideoUnavailable:
-            print(f"Video {youtube.title} is unavaialable.")
+            youtube = YouTube(ytLink)
+            try:
+                #Obtaining the stream with the highest abr (average bit rate)
+                #The highest abr for audio always contains the itag = 251
+                stream = youtube.streams.get_by_itag(251)
+                print(f"Downloading: {youtube.title}.....")
+                stream.download("C:\Github\Personal-Projects\ytmp3\YTdownloads",titleStringTrim(youtube)+".mp3")
+                print(f"Downloaded: {youtube.title}")
+            except VideoUnavailable:
+                print(f"Video {youtube.title} is unavaialable.")
+            except:
+                print(f"Error Downloading {youtube.title}")
         except:
-            print("Error")
+            print("Error: Problem with link. Please Try Again")
 
 while True:
     ytLink = input("Paste YouTube link/Playlist link:")
