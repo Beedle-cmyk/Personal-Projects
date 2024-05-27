@@ -3,10 +3,12 @@ from pytube import Playlist
 from pytube.exceptions import VideoUnavailable
 
 def titleStringTrim(Object):
+    #Replaces string text python does not like from the title
     newString = Object.title
     newString = newString.replace('"',"")
     newString = newString.replace('\\', '')
     newString = newString.replace('/', '')
+    newString = newString.replace(':', '')
     return newString
 
 def doPlaylist(ytLink):
@@ -47,3 +49,5 @@ def Download(ytLink):
 while True:
     ytLink = input("Paste YouTube link/Playlist link:")
     Download(ytLink)
+    
+    
