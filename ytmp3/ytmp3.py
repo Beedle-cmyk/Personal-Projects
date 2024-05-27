@@ -1,3 +1,4 @@
+import os
 from pytube import YouTube
 from pytube import Playlist
 from pytube.exceptions import VideoUnavailable
@@ -9,19 +10,23 @@ def titleStringTrim(Object):
     newTitle = newTitle.replace('\\', '')
     newTitle = newTitle.replace('/', '')
     newTitle = newTitle.replace(':', '')
+    newTitle = newTitle.replace('|', '')
     return newTitle
 
 def doPlaylist(ytLink):
         try:
             playlist = Playlist(ytLink)
+            path = f"C:\Github\Personal-Projects\ytmp3\YTdownloads\{titleStringTrim(playlist)}"
+            #Create a new folder where the playlist is stored
+            os.mkdir(path)
             counter = 1
-            print(f"Started Download of Playlist:{playlist.title}")
+            print(f"Started Download of Playlist: {playlist.title}")
             for video in playlist.videos:
                 try:
                     #Obtaining the stream with the highest abr (average bit rate)
                     #The highest abr always contains the itag = 251  
                     stream = video.streams.get_by_itag(251)
-                    stream.download("C:\Github\Personal-Projects\ytmp3\YTdownloads\Playlist",titleStringTrim(video)+".mp3")
+                    stream.download(path,titleStringTrim(video)+".mp3")
                     print(f"Downloaded: {video.title} [{counter}/{len(playlist.videos)}]")
                     counter += 1
                 except VideoUnavailable:
@@ -33,7 +38,6 @@ def doPlaylist(ytLink):
     
 
 def Download(ytLink):
-
     #Check if link is a playlist link
     if "&list=" in ytLink:
         doPlaylist(ytLink)
@@ -54,8 +58,9 @@ def Download(ytLink):
         except:
             print("Error: Problem with link. Please Try Again")
 
-while True:
-    ytLink = input("Paste YouTube link/Playlist link:")
-    Download(ytLink)
-    
-    
+def main():
+    while True:
+        ytLink = input("Paste YouTube link/Playlist link:")
+        Download(ytLink)
+
+main()
