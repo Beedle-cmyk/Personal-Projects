@@ -15,5 +15,3 @@ for item in doc.find_all("item"):
     link = item.link.text if item.link else None
     date = item.pubDate.text if item.pubDate else None
     print(title, link, date)
-
-#dddddd
