@@ -94,7 +94,7 @@ class Prelabeler:
         Returns:
             None
         """
-        if not (0 <= min_conf <= 1 or 0 <= max_conf <= 1):
+        if not (0 <= min_conf <= 1 and 0 <= max_conf <= 1):
             raise ValueError("Confidence threshold must be between 0 and 1.")
         
         self.min_conf = min_conf
