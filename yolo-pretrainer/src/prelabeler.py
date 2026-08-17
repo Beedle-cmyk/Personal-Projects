@@ -6,6 +6,7 @@ import json
 import cv2
 import numpy as np
 import hashlib
+import os
 
 class Prelabeler:
     """Base class for prelabelling image datasets using YOLO/RFDETR models
@@ -35,7 +36,7 @@ class Prelabeler:
     }
 
 
-    def __init__(self, model_path, min_conf, max_conf, image_dir):
+    def __init__(self, model_path, min_conf, max_conf, image_dir, output_dir="."):
         """
         Initializes the Prelabeler with the specified model path, confidence threshold 
         and image directory.
@@ -50,6 +51,8 @@ class Prelabeler:
         self.model = self._initialize_model(model_path)
         self.set_confidence(min_conf, max_conf)
         self.image_dir = Path(image_dir)
+        self.output_dir = Path(output_dir)
+        #TODO output Directory check if exists
 
 
     def _initialize_model(self, model_path) -> YOLO:
@@ -230,7 +233,7 @@ class Prelabeler:
                 print(f"No masks found for {image_path}")
                 if zero_predictions:
                     #TODO: SAM3 Check
-                    pass
+                    continue
                 continue
 
             # CHECK 3 - Overlapping labels
@@ -301,9 +304,9 @@ class Prelabeler:
                     }]
                 })
 
-        with open("seg_predictions.json", "w", encoding="utf-8") as f:
+        with open(os.path.join(self.output_dir, "seg_predictions.json"), "w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2)
-        print(f"Saved {len(tasks)} tasks to seg_predictions.json")
+        print(f"Saved {len(tasks)} tasks to {self.output_dir}\seg_predictions.json")
 
 
     def box_predict(self):
@@ -368,6 +371,6 @@ class Prelabeler:
                 }]
             })
 
-        with open("box_predictions.json", "w", encoding="utf-8") as f:
+        with open(os.path.join(self.output_dir, "box_predictions.json"), "w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2)
-        print(f"\nSaved {len(tasks)} tasks to box_predictions.json")
+        print(f"\nSaved {len(tasks)} tasks to {self.output_dir}/box_predictions.json")
