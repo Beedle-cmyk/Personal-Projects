@@ -1,10 +1,10 @@
 from ultralytics import YOLO
-from label_studio_converter.brush import mask2rle
 from pathlib import Path
+from label_studio_manager import LabelStudioManager
+from tqdm import tqdm
 
 import json
 import cv2
-import numpy as np
 import hashlib
 import os
 
@@ -21,6 +21,8 @@ class Prelabeler:
         __init__:
         _initialize_model:
         set_confidence:
+        _mask_overlap:
+        _pixel_hash:
 
     """
 
@@ -107,33 +109,6 @@ class Prelabeler:
         print(f"Maximum confidence threshold set to {self.max_conf}")
 
 
-    def _ls_convert(self, mask, width, height, mask_threshold=0.5):
-        """
-        Converts the given mask data with the prediction height & width via Run Length Encoding (rle)
-        for Label Studio compataible format
-
-        Args:
-            mask: prediction mask data formatted as a tensor
-            width: original width of the image
-            height: original height of the image
-            mask_threshold: determines how tight the mask is (higher for tighter masks)
-        
-        Returns:
-            rle: Run Length Encoding formatted prediction for Label Studio
-        """
-        # yolo gives a pytorch tensor of shape (H, W) with values between 0 and 1
-        # Converting it to a numpy array for openCV (numpy requires )
-        mask_np = mask.cpu().numpy()
-        # Upscale since yolo does not predict at orig resolution
-        mask_np = cv2.resize(mask_np, (width, height), interpolation=cv2.INTER_NEAREST)
-        mask_np = (mask_np >= mask_threshold).astype(np.uint8)  # Making a binary mask true/false --> 1/0
-
-        # Label Studio BrushLabels expects 0/255 mask and uses rle
-        # rle e.g. 0 255 255 0 0 0  ---> 1 zero, 2 whites, 3 zeros
-        ls_mask = mask_np * 255
-        return mask2rle(ls_mask)
-
-
     def _mask_overlap(self, mask1, mask2) -> float:
         """
         Calculates an overlap percentage float between the two provided masks
@@ -205,8 +180,9 @@ class Prelabeler:
             conf_threshold = self.min_conf
     
         # Loop through all images in the directory recursively and make predictions
-        for image_path in self.image_dir.rglob("*"):
+        image_files = [ p for p in self.image_dir.rglob("*") if p.suffix.lower() in self.SUPPORTED_IMG_EXTENSIONS]
 
+        for image_path in tqdm(image_files, desc="Processing Images"):
             results = []
             overlap_flag = False
             lowconf_flag = 1 if conf_threshold == 0.0 else 0
@@ -216,21 +192,21 @@ class Prelabeler:
                 pixel_hash = self._pixel_hash(image_path)
 
                 if pixel_hash in seen_hashes:
-                    print(f"Skipping duplicate frame: {image_path}")
+                    #print(f"Skipping duplicate frame: {image_path}")
                     continue
 
                 seen_hashes.add(pixel_hash)
 
             if image_path.suffix.lower() not in self.SUPPORTED_IMG_EXTENSIONS:
                 continue 
-            print(f"Processing {image_path}")
+            #print(f"Processing {image_path}")
 
             prediction = self.model(str(image_path))[0]
             height, width = prediction.orig_shape  # e.g. if the image was resized to 640x640, this will be 640, 640
 
             # CHECK 2 - No detections
             if prediction.masks is None:
-                print(f"No masks found for {image_path}")
+                #print(f"No masks found for {image_path}")
                 if zero_predictions:
                     #TODO: SAM3 Check
                     continue
@@ -253,7 +229,7 @@ class Prelabeler:
                         overlap = self._mask_overlap(masks[i], masks[j])
                         if overlap >= overlap_threshold:
                             overlap_flag = True
-                            print(f"Overlap detected: " f"{image_path.name} " f"class={self.model.names[cls_i]} " f"overlap={overlap:.2f}")
+                            #print(f"Overlap detected: " f"{image_path.name} " f"class={self.model.names[cls_i]} " f"overlap={overlap:.2f}")
                             break
                         
                     if overlap_flag:
@@ -274,9 +250,9 @@ class Prelabeler:
                 # CHECK 4 - Low Confidence
                 if conf < conf_threshold:
                     lowconf_flag = 1
-                    print(f"Low Conf detected: " f"{image_path.name}" f"class={yolo_label}")
+                    #print(f"Low Conf detected: " f"{image_path.name}" f"class={yolo_label}")
 
-                rle = self._ls_convert(mask, width, height)
+                rle = LabelStudioManager.ls_convert(mask, width, height)
 
                 results.append({
                     "id": f"{image_path.stem}_{i}",
@@ -306,7 +282,7 @@ class Prelabeler:
 
         with open(os.path.join(self.output_dir, "seg_predictions.json"), "w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2)
-        print(f"Saved {len(tasks)} tasks to {self.output_dir}\seg_predictions.json")
+        print(f"Saved {len(tasks)} tasks to {self.output_dir} seg_predictions.json")
 
 
     def box_predict(self):
@@ -373,4 +349,4 @@ class Prelabeler:
 
         with open(os.path.join(self.output_dir, "box_predictions.json"), "w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2)
-        print(f"\nSaved {len(tasks)} tasks to {self.output_dir}/box_predictions.json")
+        print(f"\nSaved {len(tasks)} tasks to {self.output_dir} box_predictions.json")

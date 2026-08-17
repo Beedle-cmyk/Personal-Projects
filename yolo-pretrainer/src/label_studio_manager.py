@@ -1,6 +1,10 @@
-import cv2
 from label_studio_converter.brush import mask2rle
+from pathlib import Path
+
 import numpy as np
+import cv2
+import subprocess
+import os
 
 class LabelStudioManager:
     """Class containing utilities for interfacing with label studio
@@ -11,13 +15,21 @@ class LabelStudioManager:
     Methods:
     """
 
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, ls_path):
         """
         Initializes blah
         """
-        self.data_dir = data_dir
+        self.data_dir = Path(data_dir)
+        self.ls_path = Path(ls_path)
 
-    def ls_convert(self, mask, width, height, mask_threshold=0.5):
+    def launch(self):
+        env = os.environ.copy()
+        os.environ["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
+        os.environ["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
+        subprocess.run(os.join(self.ls_path, "activate.bat"), env=env, check=True)
+
+
+    def ls_convert(mask, width, height, mask_threshold=0.5):
         """
         Converts the given mask data with the prediction height & width via Run Length Encoding (rle)
         for Label Studio compataible format
