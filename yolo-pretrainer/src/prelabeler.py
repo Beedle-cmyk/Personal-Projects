@@ -5,6 +5,7 @@ from pathlib import Path
 import json
 import cv2
 import numpy as np
+import hashlib
 
 class Prelabeler:
     """Base class for prelabelling image datasets using YOLO/RFDETR models
@@ -160,6 +161,21 @@ class Prelabeler:
         
         return (intersection / smaller_area).item()  # item() to convert from tensor decimal to float
 
+
+    def _pixel_hash(self, image_path) -> str:
+        """
+        Computes and returns the SHA-256 hash of the provided image
+        For use in filtering exact image duplicates
+
+        Args:
+            image_path: path to the image to compute
+        
+        Returns:
+            SHA-256 hash string of image provided
+        """
+        img = cv2.imread(str(image_path))
+        return hashlib.sha256(img.tobytes()).hexdigest()
+
     
     def seg_predict(self, conf_threshold=0.0, zero_predictions=0, overlap_threshold=0.0, check_duplicates=0) -> None:
         """
@@ -180,20 +196,27 @@ class Prelabeler:
         """
 
         tasks = []
+        seen_hashes = set()
 
         if conf_threshold < self.min_conf:
             conf_threshold = self.min_conf
-
-        if check_duplicates:
-            #TODO: Multithread mode cool
-            pass
-
+    
         # Loop through all images in the directory recursively and make predictions
         for image_path in self.image_dir.rglob("*"):
 
             results = []
             overlap_flag = False
             lowconf_flag = 1 if conf_threshold == 0.0 else 0
+
+            # CHECK 1 - Duplicate Images
+            if check_duplicates:
+                pixel_hash = self._pixel_hash(image_path)
+
+                if pixel_hash in seen_hashes:
+                    print(f"Skipping duplicate frame: {image_path}")
+                    continue
+
+                seen_hashes.add(pixel_hash)
 
             if image_path.suffix.lower() not in self.SUPPORTED_IMG_EXTENSIONS:
                 continue 
@@ -202,7 +225,7 @@ class Prelabeler:
             prediction = self.model(str(image_path))[0]
             height, width = prediction.orig_shape  # e.g. if the image was resized to 640x640, this will be 640, 640
 
-            # CHECK 1 - No detections
+            # CHECK 2 - No detections
             if prediction.masks is None:
                 print(f"No masks found for {image_path}")
                 if zero_predictions:
@@ -210,7 +233,7 @@ class Prelabeler:
                     pass
                 continue
 
-            # CHECK 2 - Overlapping labels
+            # CHECK 3 - Overlapping labels
             if overlap_threshold > 0.0:
                 masks = prediction.masks.data
                 boxes = prediction.boxes
@@ -245,7 +268,7 @@ class Prelabeler:
                 cls = int(box.cls[0])
                 yolo_label = self.model.names[cls]
 
-                # CHECK 3 - Low Confidence
+                # CHECK 4 - Low Confidence
                 if conf < conf_threshold:
                     lowconf_flag = 1
                     print(f"Low Conf detected: " f"{image_path.name}" f"class={yolo_label}")
