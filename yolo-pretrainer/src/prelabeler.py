@@ -54,7 +54,9 @@ class Prelabeler:
         self.set_confidence(min_conf, max_conf)
         self.image_dir = Path(image_dir)
         self.output_dir = Path(output_dir)
+
         #TODO output Directory check if exists
+
 
 
     def _initialize_model(self, model_path) -> YOLO:
@@ -84,8 +86,9 @@ class Prelabeler:
         #     self.model = RFDETR(model_path)
         else:
             raise ValueError(f"Model is not supported. Supported models are: {list(self.SUPPORTED_MODELS.keys())}")
-
         
+
+
     def set_confidence(self, min_conf, max_conf) -> None:
         """
         Sets the confidence threshold (max and min confidence values)
@@ -107,6 +110,27 @@ class Prelabeler:
         self.max_conf = max_conf
         print(f"Minimum confidence threshold set to {self.min_conf}")
         print(f"Maximum confidence threshold set to {self.max_conf}")
+
+
+
+    def box_iou(self, box1, box2) -> float:
+        """
+
+        """
+
+        inter_x1 = max(box1[0], box2[0])
+        inter_y1 = max(box1[1], box2[1])
+        inter_x2 = min(box1[2], box2[2])
+        inter_y2 = min(box1[3], box2[3])
+
+        intersection = (max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1))
+
+        area1 = (max(0, box1[2] - box1[0]) * max(0, box1[3] - box1[1]))
+        area2 = (max(0, box2[2] - box2[0]) * max(0, box2[3] - box2[1]))
+
+        union = area1 + area2 - intersection
+        return intersection / union if union > 0 else 0.0
+
 
 
     def _mask_overlap(self, mask1, mask2) -> float:
@@ -134,10 +158,10 @@ class Prelabeler:
         smaller_area = min(area1, area2)
 
         if smaller_area == 0:
-            # dont divide by 0
-            return 0.0
+            return 0.0   # dont divide by 0
         
         return (intersection / smaller_area).item()  # item() to convert from tensor decimal to float
+
 
 
     def _pixel_hash(self, image_path) -> str:
@@ -154,7 +178,35 @@ class Prelabeler:
         img = cv2.imread(str(image_path))
         return hashlib.sha256(img.tobytes()).hexdigest()
 
-    
+
+
+    def check_overlap(self, prediction, overlap_threshold, iou_threshold=0.05) -> bool:
+        """
+        Checks if there is overlap between the provided prediction image
+
+        Args:
+        """
+
+        masks = prediction.masks.data
+        boxes = prediction.boxes
+
+        for i in range(len(masks)):
+            cls_i = int(boxes[i].cls[0])
+
+            for j in range(i + 1, len(masks)):
+                cls_j = int(boxes[j].cls[0])
+
+                # Skip if different class or iou is less than threshold
+                if cls_i != cls_j or self.box_iou(boxes[i].xyxy[0], boxes[j].xyxy[0]) < iou_threshold:
+                    continue  
+
+                overlap = self._mask_overlap(masks[i], masks[j])
+                if overlap >= overlap_threshold:
+                    return True
+        return False
+
+
+
     def seg_predict(self, conf_threshold=0.0, zero_predictions=0, overlap_threshold=0.0, check_duplicates=0) -> None:
         """
         Predicts segmentation labels for images in the specified directory using the initialized model. 
@@ -175,66 +227,53 @@ class Prelabeler:
 
         tasks = []
         seen_hashes = set()
+        if conf_threshold < self.min_conf: conf_threshold = self.min_conf
 
-        if conf_threshold < self.min_conf:
-            conf_threshold = self.min_conf
-    
-        # Loop through all images in the directory recursively and make predictions
-        image_files = [ p for p in self.image_dir.rglob("*") if p.suffix.lower() in self.SUPPORTED_IMG_EXTENSIONS]
+        predictions = self.model.predict(
+            source=self.image_dir,
+            conf=self.min_conf,
+            batch=32,
+            stream=True,
+        )
 
-        for image_path in tqdm(image_files, desc="Processing Images"):
+        num_images = sum(1 for p in self.image_dir.rglob("*") if p.suffix.lower() in self.SUPPORTED_IMG_EXTENSIONS)
+
+        for prediction in tqdm(predictions, total=num_images, desc="Processing Images"):
+
             results = []
             overlap_flag = False
-            lowconf_flag = 1 if conf_threshold == 0.0 else 0
+
+            image_path = Path(prediction.path)
+            height, width = prediction.orig_shape  # e.g. if the image was resized to 640x640, this will be 640, 640
 
             # CHECK 1 - Duplicate Images
             if check_duplicates:
                 pixel_hash = self._pixel_hash(image_path)
-
                 if pixel_hash in seen_hashes:
-                    #print(f"Skipping duplicate frame: {image_path}")
                     continue
-
                 seen_hashes.add(pixel_hash)
-
-            if image_path.suffix.lower() not in self.SUPPORTED_IMG_EXTENSIONS:
-                continue 
-            #print(f"Processing {image_path}")
-
-            prediction = self.model(str(image_path))[0]
-            height, width = prediction.orig_shape  # e.g. if the image was resized to 640x640, this will be 640, 640
 
             # CHECK 2 - No detections
             if prediction.masks is None:
-                #print(f"No masks found for {image_path}")
                 if zero_predictions:
                     #TODO: SAM3 Check
                     continue
                 continue
 
             # CHECK 3 - Overlapping labels
-            if overlap_threshold > 0.0:
-                masks = prediction.masks.data
-                boxes = prediction.boxes
+            if overlap_threshold > 0.0: 
+                overlap_flag = self.check_overlap(prediction, overlap_threshold) 
 
-                for i in range(len(masks)):
-                    cls_i = int(boxes[i].cls[0])
+            # CHECK 4 - Low Confidence
+            needs_review = overlap_flag or conf_threshold == 0.0
+            for box in prediction.boxes:
+                if float(box.conf[0]) < conf_threshold:
+                    needs_review = True
+                    break
 
-                    for j in range(i + 1, len(masks)):
-                        cls_j = int(boxes[j].cls[0])
-
-                        if cls_i != cls_j:
-                            continue  # Only check overlap if same class
-
-                        overlap = self._mask_overlap(masks[i], masks[j])
-                        if overlap >= overlap_threshold:
-                            overlap_flag = True
-                            #print(f"Overlap detected: " f"{image_path.name} " f"class={self.model.names[cls_i]} " f"overlap={overlap:.2f}")
-                            break
-                        
-                    if overlap_flag:
-                        break
-                
+            if not needs_review:
+                continue
+            
             # zip -> (mask1, box1) then enumerate -> (0, (mask1, box1)) (1, (mask2, box2)) ...)
             # mask contains the segmentation mask for the object (pixel map)
             # box contains the class ID, confidence score, and bounding box coordinates
@@ -246,11 +285,6 @@ class Prelabeler:
                 # Mapping the model's class index to the corresponding label name
                 cls = int(box.cls[0])
                 yolo_label = self.model.names[cls]
-
-                # CHECK 4 - Low Confidence
-                if conf < conf_threshold:
-                    lowconf_flag = 1
-                    #print(f"Low Conf detected: " f"{image_path.name}" f"class={yolo_label}")
 
                 rle = LabelStudioManager.ls_convert(mask, width, height)
 
@@ -270,19 +304,24 @@ class Prelabeler:
                     }
                 })
 
-            if lowconf_flag or overlap_flag:
-                tasks.append({
-                    "data": {"image": f"/data/local-files/?d=images%5C{image_path.name}"},
-                    "predictions": [{
-                        "model_version": "1.0.0",
-                        "score": max([r["score"] for r in results], default=0),
-                        "result": results
-                    }]
-                })
+            tasks.append({
+                "data": {"image": f"/data/local-files/?d=images%5C{image_path.name}"},
+                "predictions": [{
+                    "model_version": "1.0.0",
+                    "score": max([r["score"] for r in results], default=0),
+                    "result": results
+                }]
+            })
 
         with open(os.path.join(self.output_dir, "seg_predictions.json"), "w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2)
         print(f"Saved {len(tasks)} tasks to {self.output_dir} seg_predictions.json")
+
+
+
+
+
+
 
 
     def box_predict(self):
@@ -349,4 +388,4 @@ class Prelabeler:
 
         with open(os.path.join(self.output_dir, "box_predictions.json"), "w", encoding="utf-8") as f:
             json.dump(tasks, f, indent=2)
-        print(f"\nSaved {len(tasks)} tasks to {self.output_dir} box_predictions.json")
+        print(f"\nSaved {len(tasks)} tasks to {self.output_dir} box_predictions.json")  
