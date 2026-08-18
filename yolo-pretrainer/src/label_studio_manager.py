@@ -1,4 +1,5 @@
 from label_studio_converter.brush import mask2rle
+from label_studio_sdk import LabelStudio
 from pathlib import Path
 
 import numpy as np
@@ -15,24 +16,54 @@ class LabelStudioManager:
     Methods:
     """
 
-    def __init__(self, data_dir, ls_path):
+    LABEL_STUDIO_URL = "http://localhost:8080"
+    
+    def __init__(self, data_dir, ls_path, api_key):
         """
         Initializes blah
         """
         self.data_dir = Path(data_dir)
         self.ls_path = Path(ls_path)
+        self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
+        me = client.users.whoami()
+        print("username:", me.username)
+        print("email:", me.email)
 
-    def launch(self):
+
+
+    def launch(self) -> None:
+        """
+        Launches the label studio environment with the set data directory
+
+        Args:
+            None
+        
+        Returns:
+            None
+        """
         env = os.environ.copy()
         os.environ["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
         os.environ["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
         subprocess.run(os.join(self.ls_path, "activate.bat"), env=env, check=True)
 
 
+
+    def new_project(self, title, label_config):
+        """
+        Creates a new label studio project
+
+        Args:
+            title (str): Project Title
+            label_config (str): HTML Labelling Interface configuration
+        """
+        project = self.client.projects.create(title=title, label_config=label_config)
+        print("Project ID:", project.id)
+
+
+
     def ls_convert(mask, width, height, mask_threshold=0.5):
         """
         Converts the given mask data with the prediction height & width via Run Length Encoding (rle)
-        for Label Studio compataible format
 
         Args:
             mask: prediction mask data formatted as a tensor
