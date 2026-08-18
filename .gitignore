@@ -45,3 +45,15 @@ bin/
 # IntelliJ IDEA
 .idea/
 *.iml
+
+.venv/
+__pycache__/
+*.pyc
+
+models/
+*.pt
+
+images/
+
+seg_predictions.json
+box_predictions.json

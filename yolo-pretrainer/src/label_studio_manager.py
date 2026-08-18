@@ -25,30 +25,25 @@ class LabelStudioManager:
         self.data_dir = Path(data_dir)
         self.ls_path = Path(ls_path)
         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
-        me = client.users.whoami()
+        me = self.client.users.whoami()
         print("username:", me.username)
         print("email:", me.email)
-
 
 
     def launch(self) -> None:
         """
         Launches the label studio environment with the set data directory
-
-        Args:
-            None
-        
-        Returns:
-            None
         """
         env = os.environ.copy()
         os.environ["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
         os.environ["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
         subprocess.run(os.join(self.ls_path, "activate.bat"), env=env, check=True)
 
+    def set_project_id(self, project_id):
+        self.project_id = project_id
 
 
-    def new_project(self, title, label_config):
+    def new_project(self, title, label_config) -> None:
         """
         Creates a new label studio project
 
@@ -58,8 +53,17 @@ class LabelStudioManager:
         """
         project = self.client.projects.create(title=title, label_config=label_config)
         print("Project ID:", project.id)
+        return project.id
 
+    def connect_local_storage(self, project_id):
+        storage = self.client.import_storage.local.create(
+            project=project_id,
+        )
+        sync_result = self.client.import_storage.s3.sync(import_storage.id)
 
+    def import_json(self, project_id, tasks):
+        resp = self.client.projects.import_tasks(id=project_id, request=tasks, return_task_ids=True)
+        print(resp)
 
     def ls_convert(mask, width, height, mask_threshold=0.5):
         """
