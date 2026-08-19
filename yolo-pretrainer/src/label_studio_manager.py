@@ -17,13 +17,14 @@ class LabelStudioManager:
     """
 
     LABEL_STUDIO_URL = "http://localhost:8080"
+    TRY = "http://0.0.0.0:8080/"
     
     def __init__(self, data_dir, ls_path, api_key):
         """
         Initializes blah
         """
-        self.data_dir = Path(data_dir)
-        self.ls_path = Path(ls_path)
+        self.data_dir = data_dir
+        self.ls_path = ls_path
         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
         me = self.client.users.whoami()
         print("username:", me.username)
@@ -35,9 +36,9 @@ class LabelStudioManager:
         Launches the label studio environment with the set data directory
         """
         env = os.environ.copy()
-        os.environ["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
-        os.environ["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
-        subprocess.run(os.join(self.ls_path, "activate.bat"), env=env, check=True)
+        env["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
+        env["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
+        subprocess.run([os.path.join(self.ls_path, "label-studio.exe")], env=env, cwd=self.ls_path, check=True)
 
     def set_project_id(self, project_id):
         self.project_id = project_id
