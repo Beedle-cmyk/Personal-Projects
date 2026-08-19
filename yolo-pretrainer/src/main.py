@@ -21,7 +21,6 @@ def main():
     prelabel()
     labelstudio()
 
-
 def labelstudio():
     ls = LabelStudioManager(api_key=api_key, data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data")
     proj_id = ls.new_project(title="TESTING", label_config=label_config)
@@ -37,8 +36,8 @@ def prelabel():
     )
 
     prelabeler.seg_predict(
-        conf_threshold=0.7,
-        overlap_threshold=0.8,
+        conf_threshold=0.5,
+        overlap_threshold=0.7,
         check_duplicates=True
     )
 

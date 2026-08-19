@@ -95,6 +95,7 @@ class LabelStudioManager:
         with open(json_path, "r", encoding="utf-8") as f:
             tasks = json.load(f)
 
+        print("Importing...\n")
         resp = self.client.projects.import_tasks(id=project_id, request=tasks)
         print(resp)
 
