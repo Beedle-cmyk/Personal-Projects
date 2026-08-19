@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import cv2
 import subprocess
+import json
 import os
 
 class LabelStudioManager:
@@ -43,7 +44,6 @@ class LabelStudioManager:
     def set_project_id(self, project_id):
         self.project_id = project_id
 
-
     def new_project(self, title, label_config) -> None:
         """
         Creates a new label studio project
@@ -62,8 +62,11 @@ class LabelStudioManager:
         )
         sync_result = self.client.import_storage.s3.sync(import_storage.id)
 
-    def import_json(self, project_id, tasks):
-        resp = self.client.projects.import_tasks(id=project_id, request=tasks, return_task_ids=True)
+    def import_json(self, project_id, json_path):
+        with open(json_path, "r", encoding="utf-8") as f:
+            tasks = json.load(f)
+            
+        resp = self.client.projects.import_tasks(id=project_id, request=tasks)
         print(resp)
 
     def ls_convert(mask, width, height, mask_threshold=0.5):
