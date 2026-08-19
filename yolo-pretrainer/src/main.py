@@ -18,18 +18,14 @@ ls_path = os.environ["LABEL_STUDIO_PATH"]
 label_config = Path("label_config.xml").read_text(encoding="utf-8")
 
 def main():
+    prelabel()
     labelstudio()
 
 
 def labelstudio():
-    ls = LabelStudioManager(
-        ls_path=ls_path,
-        data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data",
-        api_key=api_key
-    )
+    ls = LabelStudioManager(api_key=api_key, data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data")
     proj_id = ls.new_project(title="TESTING", label_config=label_config)
     ls.import_json(project_id=proj_id, json_path="C:\\Personal-Projects\\yolo-pretrainer\\data\\outputs\\seg_predictions.json")
-
 
 def prelabel():
     prelabeler = Prelabeler(
@@ -42,9 +38,8 @@ def prelabel():
 
     prelabeler.seg_predict(
         conf_threshold=0.7,
-        zero_predictions=0,
         overlap_threshold=0.8,
-        check_duplicates=1
+        check_duplicates=True
     )
 
 

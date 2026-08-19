@@ -4,16 +4,17 @@ from label_studio_manager import LabelStudioManager
 from tqdm import tqdm
 
 import json
-import cv2
-import hashlib
 import os
-import torch
 
 class Prelabeler:
     """Base class for prelabelling image datasets using YOLO/RFDETR models
 
     Specifically designed to generate predictions in a format compatible with Label Studio.
-    TODO: Inspect Studio integration
+    Tested with sequential video frame extraction and analysis
+    TODO: 
+        Inspect Studio integration
+        Prediction statistics: Overlapped, Low Conf, Zero, Duplicates detected etc.
+        Save points every n mins
 
     @Author: Sami Ibrahim
     @Version 8-14-2026
@@ -23,7 +24,6 @@ class Prelabeler:
         _initialize_model:
         set_confidence:
         _mask_overlap:
-        _pixel_hash:
 
     """
 
@@ -116,7 +116,14 @@ class Prelabeler:
 
     def box_iou(self, box1, box2) -> float:
         """
+        Computes the Intersection over Union (IoU) between two prediction boxes
 
+        Args:
+            box1 : First prediction box
+            box2 : Second prediction box
+        
+        Returns:
+            The computed IoU between both boxes
         """
 
         inter_x1 = max(box1[0], box2[0])
@@ -165,27 +172,18 @@ class Prelabeler:
 
 
 
-    def _pixel_hash(self, image_path) -> str:
-        """
-        Computes and returns the SHA-256 hash of the provided image
-        For use in filtering exact image duplicates
-
-        Args:
-            image_path: path to the image to compute
-        
-        Returns:
-            SHA-256 hash string of image provided
-        """
-        img = cv2.imread(str(image_path))
-        return hashlib.sha256(img.tobytes()).hexdigest()
-
-
-
     def check_overlap(self, masks, boxes, overlap_threshold, iou_threshold=0.05) -> bool:
         """
         Checks if there is overlap between the provided prediction image
 
         Args:
+            masks:
+            boxes:
+            overlap_threshold:
+            iou_threshold:
+        
+        Returns:
+
         """
 
         for i in range(len(masks)):
@@ -209,7 +207,16 @@ class Prelabeler:
 
     def same_prediction(self, prev_boxes, curr_boxes, iou_threshold=0.90) -> bool:
         """
-        Returns True when two frames have essentially the same detections
+        Checks if two frames have essentially the same detections
+
+        Args:
+            prev_boxes: The bounding boxes of the first image prediction
+            curr_boxes: The bounding boxes of the second image prediction
+            iou_threshold: IoU threshold that must be met to classify as same detection
+
+        Returns:
+            True when both boxes predictions possess the same class, label number and IoU
+            is greater than the provided threshold
         """
 
         if len(prev_boxes) != len(curr_boxes):
@@ -232,7 +239,7 @@ class Prelabeler:
 
 
 
-    def seg_predict(self, conf_threshold=0.0, zero_predictions=0, overlap_threshold=0.0, check_duplicates=0) -> None:
+    def seg_predict(self, conf_threshold=0.0, zero_predictions=False, overlap_threshold=0.0, check_duplicates=False) -> None:
             """
             Predicts segmentation labels for images in the specified directory using the initialized model. 
             Saves the predictions in a JSON file compatible with Label Studio.
@@ -245,40 +252,29 @@ class Prelabeler:
                 conf_threshold (float): flags images with predictions below this confidence score
                 zero_predictions (bool): when true reviews images with no predictions with SAM3
                 overlap_threshold (float): flags images that contain overlapping masks to a percentage degree e.g. 80% overlap
-                check_duplicates (bool): when true ignores potential duplicate images
+                check_duplicates (bool): when true skip images that appear to be duplicates
 
             Returns:
                 None
             """
 
             tasks = []
-            seen_hashes = set()
             prev_boxes = None
-            if conf_threshold < self.min_conf: conf_threshold = self.min_conf
-        
+
             image_files = [ p for p in self.image_dir.rglob("*") if p.suffix.lower() in self.SUPPORTED_IMG_EXTENSIONS]
+            review_mode = (conf_threshold > 0.0 or overlap_threshold > 0.0 or zero_predictions)
 
             for image_path in tqdm(image_files, desc="Processing Images"):
-                results = []
-                overlap_flag = False
-                lowconf_flag = 1 if conf_threshold == 0.0 else 0
-
-                #CHECK 1 - Duplicate Images
-                # if check_duplicates:
-                #     pixel_hash = self._pixel_hash(image_path)
-                #     if pixel_hash in seen_hashes:
-                #         print("SAME")
-                #         continue
-                #     seen_hashes.add(pixel_hash)
-
+                
                 prediction = self.model(str(image_path))[0]
                 height, width = prediction.orig_shape  # e.g. if the image was resized to 640x640, this will be 640, 640
 
                 # CHECK 1 - No detections
                 if prediction.masks is None:
-                    if zero_predictions:
-                        #TODO: SAM3 Check
-                        continue
+                    # if not review_mode:
+                    #     continue
+                    # if zero_predictions:
+                    #     #TODO SAM3
                     continue
 
                 masks = prediction.masks.data
@@ -287,13 +283,24 @@ class Prelabeler:
                 # CHECK 2 - Similar consecutive video frames
                 if check_duplicates and prev_boxes is not None:
                     if self.same_prediction(prev_boxes, boxes, iou_threshold=0.90):
-                        print("SAME!")
-                        continue
+                        continue  # Skip that image
                 prev_boxes = boxes
 
                 # CHECK 3 - Overlapping labels
+                overlap_flag = False
                 if overlap_threshold > 0.0:
                     overlap_flag = self.check_overlap(masks, boxes, overlap_threshold)
+
+                # CHECK 4 - Low Confidence
+                lowconf_flag = False
+                if conf_threshold > 0.0:
+                    lowconf_flag = any(float(box.conf[0]) < conf_threshold for box in boxes)
+
+                review_image = overlap_flag or lowconf_flag
+                if review_mode and not review_image:
+                    continue
+
+                results = []
 
                 # zip -> (mask1, box1) then enumerate -> (0, (mask1, box1)) (1, (mask2, box2)) ...)
                 # mask contains the segmentation mask for the object (pixel map)
@@ -306,13 +313,6 @@ class Prelabeler:
                     # Mapping the model's class index to the corresponding label name
                     cls = int(box.cls[0])
                     yolo_label = self.model.names[cls]
-
-                    # CHECK 4 - Low Confidence
-                    if conf < conf_threshold:
-                        lowconf_flag = 1
-
-                    if lowconf_flag == 0 and overlap_flag == False:
-                        continue
 
                     rle = LabelStudioManager.ls_convert(mask, width, height)
 
@@ -332,6 +332,9 @@ class Prelabeler:
                         }
                     })
 
+                if not results:
+                    continue
+    
                 tasks.append({
                     "data": {"image": f"/data/local-files/?d=images%5C{image_path.name}"},
                     "predictions": [{
@@ -344,9 +347,6 @@ class Prelabeler:
             with open(os.path.join(self.output_dir, "seg_predictions.json"), "w", encoding="utf-8") as f:
                 json.dump(tasks, f, indent=2)
             print(f"Saved {len(tasks)} tasks to {self.output_dir} seg_predictions.json")
-
-
-
 
 
 

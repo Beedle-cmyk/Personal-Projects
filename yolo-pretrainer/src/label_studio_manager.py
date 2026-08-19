@@ -15,46 +15,90 @@ class LabelStudioManager:
     @Version 8-17-2026
 
     Methods:
+        __init__:
+        launch:
+        new_project:
+        import_json:
+        ls_convert:
     """
 
     LABEL_STUDIO_URL = "http://localhost:8080"
-    TRY = "http://0.0.0.0:8080/"
     
-    def __init__(self, data_dir, ls_path, api_key):
+    def __init__(self, api_key, data_dir):
         """
-        Initializes blah
+        Initializes the Label Studio API
+
+        Args:
+            api_key (str): Label Studio unique API key found in user settings
+            data_dir (str): Path to data directory 
         """
         self.data_dir = data_dir
-        self.ls_path = ls_path
+        self.project_id = None
+
         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
         me = self.client.users.whoami()
         print("username:", me.username)
         print("email:", me.email)
 
 
-    def launch(self) -> None:
+    def launch(self, ls_path) -> None:
         """
-        Launches the label studio environment with the set data directory
+        Launches the Label Studio environment
+        Will set the data directory if a path exists
+
+        Args:
+            ls_path (str): Path to Label Studio exe directory (non-inclusive of executable in path)
+        
+        Returns:
+            None
         """
+
         env = os.environ.copy()
-        env["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
-        env["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
-        subprocess.run([os.path.join(self.ls_path, "label-studio.exe")], env=env, cwd=self.ls_path, check=True)
+        if self.data_dir is not None:
+            env["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
+            env["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
 
-    def set_project_id(self, project_id):
-        self.project_id = project_id
+        subprocess.run([os.path.join(ls_path, "label-studio.exe")], env=env, cwd=self.ls_path, check=True)
 
-    def new_project(self, title, label_config) -> None:
+
+
+    def new_project(self, title, label_config) -> int:
         """
         Creates a new label studio project
 
         Args:
             title (str): Project Title
             label_config (str): HTML Labelling Interface configuration
+        
+        Returns:
+            integer Project ID generated
         """
         project = self.client.projects.create(title=title, label_config=label_config)
-        print("Project ID:", project.id)
+        print("Instance Project ID:", project.id)
+        self.project_id = project.id
         return project.id
+
+
+
+    def import_json(self, project_id, json_path) -> None:
+        """
+        Imports the provided json file into the project provided
+
+        Args:
+            project_id (int): provided Project ID
+            json_path: path to json file
+
+        Returns:
+            None 
+        """
+
+        with open(json_path, "r", encoding="utf-8") as f:
+            tasks = json.load(f)
+
+        resp = self.client.projects.import_tasks(id=project_id, request=tasks)
+        print(resp)
+
+
 
     def connect_local_storage(self, project_id):
         storage = self.client.import_storage.local.create(
@@ -62,12 +106,7 @@ class LabelStudioManager:
         )
         sync_result = self.client.import_storage.s3.sync(import_storage.id)
 
-    def import_json(self, project_id, json_path):
-        with open(json_path, "r", encoding="utf-8") as f:
-            tasks = json.load(f)
-            
-        resp = self.client.projects.import_tasks(id=project_id, request=tasks)
-        print(resp)
+
 
     def ls_convert(mask, width, height, mask_threshold=0.5):
         """
