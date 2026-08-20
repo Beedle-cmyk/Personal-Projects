@@ -14,6 +14,9 @@ class LabelStudioManager:
     @Author: Sami Ibrahim
     @Version 8-17-2026
 
+    # should convert the json to the label txt format on download I WOULD THINK!!
+    # and also cleanup the images once copied (since label studio doesnt do this)
+
     Methods:
         __init__:
         launch:

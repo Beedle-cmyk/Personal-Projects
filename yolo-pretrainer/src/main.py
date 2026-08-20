@@ -18,7 +18,7 @@ ls_path = os.environ["LABEL_STUDIO_PATH"]
 label_config = Path("label_config.xml").read_text(encoding="utf-8")
 
 def main():
-    #prelabel()
+    prelabel()
     #labelstudio()
     print("END")
 
@@ -39,11 +39,13 @@ def prelabel():
     OUTPUT_DIR
     )
 
-    prelabeler.seg_predict(
-        conf_threshold=0.5,
-        overlap_threshold=0.7,
-        check_duplicates=True
-    )
+    prelabeler.seg_predict()
+
+    # prelabeler.seg_predict(
+    #     conf_threshold=0.5,
+    #     overlap_threshold=0.7,
+    #     check_duplicates=True
+    # )
 
 
 if __name__ == "__main__":

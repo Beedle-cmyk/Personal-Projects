@@ -269,6 +269,7 @@ class Prelabeler:
                 
                 prediction = self.model(str(image_path))[0]
                 height, width = prediction.orig_shape  # e.g. if the image was resized to 640x640, this will be 640, 640
+                results = []
 
                 # CHECK 1 - No detections
                 if prediction.masks is None:
@@ -276,6 +277,14 @@ class Prelabeler:
                     #     continue
                     # if zero_predictions:
                     #     #TODO SAM3
+                    tasks.append({
+                        "data": {"image": f"/data/local-files/?d=images%5C{image_path.name}"},
+                        "predictions": [{
+                            "model_version": "1.0.0",
+                            "score": max([r["score"] for r in results], default=0),
+                            "result": results
+                        }]
+                    })
                     continue
 
                 masks = prediction.masks.data
@@ -300,8 +309,6 @@ class Prelabeler:
                 review_image = overlap_flag or lowconf_flag
                 if review_mode and not review_image:
                     continue
-
-                results = []
 
                 # zip -> (mask1, box1) then enumerate -> (0, (mask1, box1)) (1, (mask2, box2)) ...)
                 # mask contains the segmentation mask for the object (pixel map)
@@ -332,9 +339,6 @@ class Prelabeler:
                             "brushlabels": [yolo_label]
                         }
                     })
-
-                if not results:
-                    continue
     
                 tasks.append({
                     "data": {"image": f"/data/local-files/?d=images%5C{image_path.name}"},
@@ -348,7 +352,7 @@ class Prelabeler:
             with open(os.path.join(self.output_dir, "seg_predictions.json"), "w", encoding="utf-8") as f:
                 json.dump(tasks, f, indent=2)
             print(f"Saved {len(tasks)} tasks to {self.output_dir} seg_predictions.json")
-
+    
 
 
     def box_predict(self):

@@ -8,8 +8,15 @@ class ProjectManager:
     @author: Sami Ibrahim
     @version: 8/20/2026
 
+    # Create project with valid directory structure
+    # Use file naming scheme and auto increment new project with said scheme
+    # Generate findings based on previous version
+    # stratified split to split the data ?? or should be in trainer?
+
     Methods:
-            __init__:
+        __init__:
+        create_project:
+        
     """
 
     FINDINGS_TEMPLATE = """
@@ -47,7 +54,7 @@ class ProjectManager:
     def __init__(self, project_dir):
         """
         """
-
+        
         self.project_dir = Path(project_dir)
 
 
