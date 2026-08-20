@@ -18,8 +18,12 @@ ls_path = os.environ["LABEL_STUDIO_PATH"]
 label_config = Path("label_config.xml").read_text(encoding="utf-8")
 
 def main():
-    prelabel()
-    labelstudio()
+    #prelabel()
+    #labelstudio()
+    print("END")
+
+def trainer():
+    pass
 
 def labelstudio():
     ls = LabelStudioManager(api_key=api_key, data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data")

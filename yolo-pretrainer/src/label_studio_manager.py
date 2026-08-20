@@ -41,6 +41,7 @@ class LabelStudioManager:
         print("email:", me.email)
 
 
+
     def launch(self, ls_path) -> None:
         """
         Launches the Label Studio environment
@@ -102,10 +103,11 @@ class LabelStudioManager:
 
 
     def connect_local_storage(self, project_id):
-        storage = self.client.import_storage.local.create(
-            project=project_id,
-        )
-        sync_result = self.client.import_storage.s3.sync(import_storage.id)
+        # storage = self.client.import_storage.local.create(
+        #     project=project_id,
+        # )
+        # sync_result = self.client.import_storage.s3.sync(import_storage.id)
+        pass
 
 
 
