@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import os
+import shutil
 
 class ProjectManager:
     """Class for creating and managing YOLO projects under my custom defined
@@ -71,16 +72,16 @@ class ProjectManager:
         Initializes the project directory where your projects are stored
 
         Args:
-            project_dir: Path to where projects are stored
-            yolo_version: chosen yolo version
-            data_num : total amount of data files for a specific project 
+            project_dir (str | Path): Path to where projects are stored
+            data_num (int): total amount of data files for a specific project
+            current_proj (str | Path): current working project 
 
         Returns:
             None
         """
         
         self.project_dir = Path(project_dir)
-        self.yolo_version = None
+        self.current_proj = None
         self.data_num = 0
         
 
@@ -91,13 +92,13 @@ class ProjectManager:
         pre-defined structure:
 
         Project Directory --- yolo26_v1.2_box_400 ----- original_data ------ images
-                                                     |                     |
-                                                     |                     - labels
-                                                     |
+                                                     |                       
                                                      |- data.yaml
                                                      |
                                                      |- findings.txt
         
+        Note: If a custom name is entered then all other parameters are auto filled
+                                                     
         Args:
             name (str): optionally define custom project name
             data_dir (str | Path): directory/location of image data in file system
@@ -108,29 +109,105 @@ class ProjectManager:
             Path to project created                                 
         """
 
+        latest_findings = self.FINDINGS_TEMPLATE
+        latest_data_yaml = self.DATA_YAML_TEMPLATE
+
         if name is None:
-            # Auto assign version number if none specified
-            if version is None:
+
+            if version is None:  # Auto assign version number if none specified
                 version = 1.0
                 for project in self.project_dir.iterdir():
+
+                    # Checking to see if the project type and version number already exist
                     if project.is_dir() and project.name.find(project_type) != -1:
+                        if project.name.find("v" + str(version)) != -1:
 
-                        version_index = project.name.find("v" + str(version))
-                        if version_index != -1:
                             version = float(version)
-                            # try:
-                            #     with open(os.path.joing(project, "findings.txt")) as f:
-                            # except FileNotFoundError:
-                        version += 0.1
 
-            full_name = "yolo26" + "_v" + str(version) + "_" + project_type + "_" + data_dir data number
+                            try:
+                                with open(os.path.joing(project, "findings.txt"), "r") as f:
+                                    latest_findings = f.read()
+                            except FileNotFoundError:
+                                print(f"findings.txt not found in {project.name} Skipping...")
+
+                            try:
+                                with open(os.path.joing(project, "data.yaml"), "r") as f:
+                                    latest_data_yaml = f.read()
+                            except FileNotFoundError:
+                                print(f"data.yaml not found in {project.name} Skipping...")
+
+                            version += 0.1
+
+            if data_dir is not None and data_dir.is_dir():
+                self.count_data(data_dir)  # Updates the attribute data_num
+            else:
+                self.data_num = 0
+
+            full_name = "yolo26" + "_v" + str(version) + "_" + project_type + "_" + str(self.data_num)
             working_dir = os.path.join(self.project_dir, full_name)
 
         else:
             working_dir = os.path.join(self.project_dir, name)
-            os.mkdir(working_dir)
 
-        with open("findings.txt") as file:
-            file.write(self.FINDINGS_TEMPLATE)
+        os.mkdir(working_dir)
 
-    def count_data(self, project_name):
+        findings_path = os.path.join(working_dir, "findings.txt")
+        self.update_findings(findings_path, latest_findings)
+
+        with open(os.path.join(working_dir, "data.yaml"), "w") as file:
+            file.write(latest_data_yaml)
+
+        original_data_dir = os.path.join(working_dir, "original_data")
+        os.mkdir(original_data_dir)
+
+        data_folder = os.path.join(original_data_dir, "data")
+        os.mkdir(data_folder)
+
+        if data_dir is not None and data_dir.is_dir():
+            shutil.copytree(data_dir, data_folder)
+
+
+
+    def count_data(self, current_proj) -> int:
+        """
+        Stores and returns the total count of data images for the specified project
+        Note: will switch the current working project to the one specified
+
+        Args:
+            current_proj (str | Path): path to current working project
+
+        Returns:
+            raw count of total images in the directory
+        """
+
+        if current_proj is None or not current_proj.is_dir():
+            current_proj = self.create_project()
+        else:
+            self.current_proj = current_proj
+
+        count = 0
+        for project in current_proj.rglob("*"):
+            count += 1
+
+        self.data_num = count
+        return count
+
+
+
+    def update_findings(self, findings_file, contents):
+        """
+        Updates the findings file with contents
+        TODO: will be useful for the Evaluator class when updating findings
+
+        Args:
+            findings_file (str | Path): path to findings.txt file
+            contents (str): contents to write to file
+
+        Returns:
+            None 
+        """
+        try:
+            with open(findings_file, "w") as file:
+                file.write(contents)
+        except FileNotFoundError:
+            print("File does not exist")
