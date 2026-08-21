@@ -1,5 +1,6 @@
 from prelabeler import Prelabeler
 from label_studio_manager import LabelStudioManager
+from project_manager import ProjectManager
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -18,9 +19,10 @@ ls_path = os.environ["LABEL_STUDIO_PATH"]
 label_config = Path("label_config.xml").read_text(encoding="utf-8")
 
 def main():
-    prelabel()
+    project_manager()
+    #prelabel()
     #labelstudio()
-    print("END")
+    pass
 
 def trainer():
     pass
@@ -47,6 +49,10 @@ def prelabel():
     #     check_duplicates=True
     # )
 
+def project_manager():
+
+    p = ProjectManager(r"C:\Personal-Projects\yolo-pretrainer\projects")
+    p.create_project()
 
 if __name__ == "__main__":
     main()

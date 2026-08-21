@@ -21,52 +21,37 @@ class ProjectManager:
         count_data: counts the amount of data stored for a specific project
     """
 
-    FINDINGS_TEMPLATE = """
-    Best Model: 
+    FINDINGS_TEMPLATE = """Best Model: 
+    
+Version:
 
-    Version:
-
-    --------------------------------
-    |        Version Updates       |
-    --------------------------------
-    -
+--------------------------------
+|        Version Updates       |
+--------------------------------
+-
 
 
-    --------------------------------
-    |          Findings            |
-    --------------------------------
-    - 
-    """
+--------------------------------
+|          Findings            |
+--------------------------------
+-"""
 
-    DATA_YAML_TEMPLATE = """
-    path:
-    train: train\images
-    val: val\images
+    DATA_YAML_TEMPLATE = """path:
+train: train\images
+val: val\images
 
-    nc: 3
+nc: 3
 
-    names: ["Class1", "Class2", "Class3"]
-    """
+names: ["Class1", "Class2", "Class3"]"""
 
-    PROJECT_TYPE = {
-        "seg",
-        "box"
+    SUPPORTED_IMG_EXTENSIONS = {
+        ".jpg", 
+        ".jpeg", 
+        ".png"
     }
 
-    YOLO_VERSION = {
-        "yolo26",
-        "yolo12",
-        "yolo11",
-        "yolov10",
-        "yolov9",
-        "yolov8",
-        "yolov7",
-        "yolov6",
-        "yolov5",
-        "yolov4",
-        "yolov3"
-    }
-
+    SUPPORTED_PROJECT_TYPES = {"box", "seg"}
+    
     def __init__(self, project_dir):
         """
         Initializes the project directory where your projects are stored
@@ -104,7 +89,11 @@ class ProjectManager:
             data_dir (str | Path): directory/location of image data in file system
             version (float): optionally set project version
             project_type (str): define project type, defaults are "seg" or "box"
-
+        
+        Raises:
+            ValueError if project_type is not supported
+            FileExistsError if the project already exists
+        
         Returns:
             Path to project created                                 
         """
@@ -112,59 +101,84 @@ class ProjectManager:
         latest_findings = self.FINDINGS_TEMPLATE
         latest_data_yaml = self.DATA_YAML_TEMPLATE
 
+        if project_type not in self.SUPPORTED_PROJECT_TYPES:
+            raise ValueError(f"project_type must be one of " f"{self.SUPPORTED_PROJECT_TYPES}")
+
+        if data_dir is not None:
+            data_dir = Path(data_dir)
+            self.count_data(data_dir)  # Updates the attribute data_num
+        else:
+            self.data_num = 0
+
         if name is None:
 
             if version is None:  # Auto assign version number if none specified
-                version = 1.0
+                version = 0.9
                 for project in self.project_dir.iterdir():
-
                     # Checking to see if the project type and version number already exist
                     if project.is_dir() and project.name.find(project_type) != -1:
-                        if project.name.find("v" + str(version)) != -1:
+                        try:
+                            parts = project.name.split("_")
+                            curr_version = float(parts[1][1:])
 
-                            version = float(version)
+                            if version < curr_version:
+                                version = curr_version
 
-                            try:
-                                with open(os.path.joing(project, "findings.txt"), "r") as f:
-                                    latest_findings = f.read()
-                            except FileNotFoundError:
-                                print(f"findings.txt not found in {project.name} Skipping...")
+                                try:
+                                    with open(os.path.join(project, "findings.txt"), "r") as f:
+                                        latest_findings = f.read()
+                                except FileNotFoundError:
+                                    print(f"findings.txt not found in {project.name} Skipping...")
 
-                            try:
-                                with open(os.path.joing(project, "data.yaml"), "r") as f:
-                                    latest_data_yaml = f.read()
-                            except FileNotFoundError:
-                                print(f"data.yaml not found in {project.name} Skipping...")
+                                try:
+                                    with open(os.path.join(project, "data.yaml"), "r") as f:
+                                        latest_data_yaml = f.read()
+                                except FileNotFoundError:
+                                    print(f"data.yaml not found in {project.name} Skipping...")
 
-                            version += 0.1
-
-            if data_dir is not None and data_dir.is_dir():
-                self.count_data(data_dir)  # Updates the attribute data_num
-            else:
-                self.data_num = 0
+                        except (IndexError, ValueError):
+                            continue
+                        
+                version = round(version + 0.1, 1)
 
             full_name = "yolo26" + "_v" + str(version) + "_" + project_type + "_" + str(self.data_num)
-            working_dir = os.path.join(self.project_dir, full_name)
+            working_dir = self.project_dir / full_name
 
         else:
-            working_dir = os.path.join(self.project_dir, name)
+            working_dir = self.project_dir / name
 
-        os.mkdir(working_dir)
+        if working_dir.exists():
+            raise FileExistsError(f"Error {working_dir} already exists")
+        working_dir.mkdir()
 
-        findings_path = os.path.join(working_dir, "findings.txt")
+        findings_path = working_dir / "findings.txt"
         self.update_findings(findings_path, latest_findings)
 
-        with open(os.path.join(working_dir, "data.yaml"), "w") as file:
+
+        # data.yaml path overwrite
+        yaml_lines = latest_data_yaml.splitlines()
+        for i, line in enumerate(yaml_lines):
+            if line.strip().startswith("path:"):
+                yaml_lines[i] = f"path: {working_dir}\data"
+                break
+        latest_data_yaml = "\n".join(yaml_lines)
+
+        with open(working_dir / "data.yaml", "w") as file:
             file.write(latest_data_yaml)
 
-        original_data_dir = os.path.join(working_dir, "original_data")
-        os.mkdir(original_data_dir)
+        original_data_dir = working_dir / "original_data"
+        original_data_dir.mkdir()
 
-        data_folder = os.path.join(original_data_dir, "data")
-        os.mkdir(data_folder)
+        data_folder = original_data_dir / "data"
+        data_folder.mkdir()
 
-        if data_dir is not None and data_dir.is_dir():
-            shutil.copytree(data_dir, data_folder)
+        if data_dir is not None:
+            shutil.copytree(data_dir, data_folder, dirs_exist_ok=True)
+
+        print(f"{working_dir} successfully created!")
+
+        self.current_proj = Path(working_dir)
+        return self.current_proj
 
 
 
@@ -175,19 +189,19 @@ class ProjectManager:
 
         Args:
             current_proj (str | Path): path to current working project
+        
+        Raises:
+            ValueError if an invalid project directory is provided
 
         Returns:
             raw count of total images in the directory
         """
 
+        current_proj = Path(current_proj)
         if current_proj is None or not current_proj.is_dir():
-            current_proj = self.create_project()
-        else:
-            self.current_proj = current_proj
+            raise ValueError("Invalid project directory")
 
-        count = 0
-        for project in current_proj.rglob("*"):
-            count += 1
+        count = sum(1 for file in current_proj.rglob("*") if file.is_file() and file.suffix.lower() in self.SUPPORTED_IMG_EXTENSIONS)
 
         self.data_num = count
         return count
@@ -206,8 +220,6 @@ class ProjectManager:
         Returns:
             None 
         """
-        try:
-            with open(findings_file, "w") as file:
-                file.write(contents)
-        except FileNotFoundError:
-            print("File does not exist")
+
+        with open(findings_file, "w") as file:
+            file.write(contents)
