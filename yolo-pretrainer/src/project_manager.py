@@ -82,7 +82,7 @@ names: ["Class1", "Class2", "Class3"]"""
                                                      |
                                                      |- findings.txt
         
-        Note: If a custom name is entered then all other parameters are auto filled
+        Note: If a custom name is entered then all other name-related parameters are auto filled
                                                      
         Args:
             name (str): optionally define custom project name

@@ -19,7 +19,7 @@ ls_path = os.environ["LABEL_STUDIO_PATH"]
 label_config = Path("label_config.xml").read_text(encoding="utf-8")
 
 def main():
-    project_manager()
+    #project_manager()
     #prelabel()
     #labelstudio()
     pass
