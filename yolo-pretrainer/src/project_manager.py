@@ -168,6 +168,9 @@ names: ["Class1", "Class2", "Class3"]"""
         original_data_dir = working_dir / "original_data"
         original_data_dir.mkdir()
 
+        labels_folder = original_data_dir / "labels"
+        labels_folder.mkdir()
+
         data_folder = original_data_dir / "images"
         data_folder.mkdir()
 

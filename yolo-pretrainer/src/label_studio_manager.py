@@ -1,6 +1,7 @@
-from label_studio_converter.brush import mask2rle
+from utils import brush
 from label_studio_sdk import LabelStudio
 from pathlib import Path
+from urllib.parse import unquote
 
 import numpy as np
 import cv2
@@ -150,10 +151,138 @@ class LabelStudioManager:
         # Label Studio BrushLabels expects 0/255 mask and uses rle
         # rle e.g. 0 255 255 0 0 0  ---> 1 zero, 2 whites, 3 zeros
         ls_mask = mask_np * 255
-        return mask2rle(ls_mask)
+        return brush.mask2rle(ls_mask)
 
 
 
-    def json_to_yolo(self, input_file, output_dir):
+def seg_json_to_yolo(input_file, output_dir, labels_mapping):
+    """
+    Function for converting a label studio exported json file 
+    into yolo compatible labels .txt files
 
-        with open
+    Args:
+        input_file : the exported label studio 
+        output_dir : the directory to store labels
+
+    Returns:
+        None
+    """
+
+    with open(input_file, "r") as f:
+        data = json.load(f)
+
+    skipped_labels = []
+
+    for task in data:
+
+        image_path = task["data"]["image"]
+        if "?d=" in image_path:
+            image_path = image_path.split("?d=")[-1]
+
+        image_path = unquote(image_path)
+        image_path = image_path.replace("\\", "/")
+        image_name = os.path.splitext(os.path.basename(image_path))[0]
+
+        # Skip image if any annotation was cancelled
+        if any(ann.get("was_cancelled", False) for ann in task.get("annotations", [])):
+            print(f"Skipping cancelled image: {image_name}")
+            continue
+
+        output_lines = []
+        for annotation in task.get("annotations", []):
+            for item in annotation["result"]:
+
+                height = item["original_height"]
+                width = item["original_width"]
+
+                if item.get("type") == "brushlabels":
+
+                    pts = brush_to_yolo(item["value"]["rle"], height, width)
+                    class_name = item["value"]["brushlabels"][0]
+
+                elif item.get("type") == "polygonlabels":
+
+                    pts = polygon_to_yolo(item["value"]["points"])
+                    class_name = item["value"]["polygonlabels"][0]
+
+                else:
+                    skipped_labels.append({
+                        "task_id": task.get("id"),
+                        "type": item.get("type"),
+                        "id": item.get("id")
+                    })
+                    continue
+
+                # Require at least 3 points
+                if len(pts) < 6:
+                    print(f"Skipping empty polygon: " f"{image_name} ({class_name})")
+                    continue
+
+                class_id = mapping_class(class_name, labels_mapping)
+                output_lines.append(f"{class_id} {' '.join(map(str, pts))}")
+
+        output_file = os.path.join(output_dir, f"{image_name}.txt")
+
+        with open(output_file, "w") as f:
+            for line in output_lines:
+                f.write(line + "\n")
+
+        print(f"Converted {image_name}.txt " f"({len(output_lines)} objects)")
+    print("Conversion completed.")
+
+    if skipped_labels:
+        print("\nSkipped labels:")
+        for label in skipped_labels:
+            print(label)
+
+
+
+    def brush_to_yolo(rle, height, width):
+        """
+        Helper method that converts 
+        """
+        image = brush.decode_rle(rle, height, width)
+
+        _, mask = cv2.threshold(image, 1, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        polygon = []
+
+        for cnt in contours:
+
+            area = cv2.contourArea(cnt)
+
+            # reject only tiny noise
+            if area < 5:
+                continue
+
+            # simplify contour
+            epsilon = 0.005 * cv2.arcLength(cnt, True)
+            cnt = cv2.approxPolyDP(cnt, epsilon, True)
+
+            for point in cnt:
+                x, y = point[0]
+                polygon.extend([round(x / width, 6), round(y / height, 6)])
+        return polygon
+
+
+
+    def polygon_to_yolo(points):
+        """
+
+        """
+        polygon = []
+        for x, y in points:
+            polygon.extend([round(x / 100, 6), round(y / 100, 6)])
+
+        return polygon
+
+
+
+    def mapping_class(class_name, labels_mapping) -> int:
+        try:
+            return list(labels_mapping.keys())[
+                list(labels_mapping.values()).index(class_name)
+            ]
+        except ValueError:
+            raise ValueError(f"Class name '{class_name}' not found in LABELS_MAPPING")

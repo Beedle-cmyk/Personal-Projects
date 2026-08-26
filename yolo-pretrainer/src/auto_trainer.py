@@ -4,6 +4,8 @@ from evaluator import Evaluator
 from prelabeler import Prelabeler
 from label_studio_manager import LabelStudioManager
 
+import yaml
+
 class AutoTrainer:
     """ Manager class where all the magic happens folks
 
@@ -28,7 +30,12 @@ class AutoTrainer:
 
 
 
-    def start(self, labels_json):        
+    def start(self, labels_json):
+
+        
+
+        labels_folder = self.project_manager.current_proj + "/original_data/labels"
+        self.label_studio_manager.seg_json_to_yolo(labels_json, labels_folder)
 
         #STEP 1 - initial training try out 3 fixed param configurations to get imgsz, batch size and epoch number
         self.trainer.train(cfg="")
@@ -41,4 +48,15 @@ class AutoTrainer:
         self.label_studio_manager.launch()
         self.label_studio_manager.import_json()
         # Review on labelstudio
-        
+    
+
+    def load_labels_mapping(self):
+    
+        with open(self.project_manager.current_proj + "/data.yaml", "r") as f:
+            data = yaml.safe_load(f)
+
+        labels_mapping = {
+            i: name
+            for i, name in enumerate(data["names"])
+        }
+        return labels_mapping

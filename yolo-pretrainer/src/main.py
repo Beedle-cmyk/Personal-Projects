@@ -37,7 +37,7 @@ def trainer():
 def labelstudio():
     ls = LabelStudioManager(api_key=api_key, data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data")
     proj_id = ls.new_project(title="yolo26_v2.1_seg_", label_config=label_config)
-    #ls.import_json(project_id=proj_id, json_path="C:\\Personal-Projects\\yolo-pretrainer\\data\\outputs\\seg_predictions.json")
+    ls.import_json(project_id=proj_id, json_path="C:\\Personal-Projects\\yolo-pretrainer\\data\\outputs\\seg_predictions.json")
 
 def prelabel():
     prelabeler = Prelabeler(
