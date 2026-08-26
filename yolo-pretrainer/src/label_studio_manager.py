@@ -26,6 +26,7 @@ class LabelStudioManager:
     """
 
     LABEL_STUDIO_URL = "http://localhost:8080"
+    # MAX_LS_INSTANCES = 10
     
     def __init__(self, api_key, data_dir):
         """
@@ -35,10 +36,18 @@ class LabelStudioManager:
             api_key (str): Label Studio unique API key found in user settings
             data_dir (str): Path to data directory 
         """
+
         self.data_dir = data_dir
         self.project_id = None
 
         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
+        
+        # for i in range(self.MAX_LS_INSTANCES):
+        #     try:
+        #         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL + str(8080 + i), api_key=api_key)
+        #     except KeyError:
+        #         pass
+
         me = self.client.users.whoami()
         print("username:", me.username)
         print("email:", me.email)
@@ -49,6 +58,7 @@ class LabelStudioManager:
         """
         Launches the Label Studio environment
         Will set the data directory if a path exists
+        TODO: Launch separately from the script
 
         Args:
             ls_path (str): Path to Label Studio exe directory (non-inclusive of executable in path)
@@ -62,7 +72,9 @@ class LabelStudioManager:
             env["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
             env["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
 
-        subprocess.run([os.path.join(ls_path, "label-studio.exe")], env=env, cwd=self.ls_path, check=True)
+        process = subprocess.Popen([os.path.join(ls_path, "label-studio.exe")], env=env, cwd=self.ls_path,)
+        
+        return process
 
 
 
@@ -77,6 +89,7 @@ class LabelStudioManager:
         Returns:
             integer Project ID generated
         """
+        
         project = self.client.projects.create(title=title, label_config=label_config)
         print("Instance Project ID:", project.id)
         self.project_id = project.id
@@ -138,3 +151,9 @@ class LabelStudioManager:
         # rle e.g. 0 255 255 0 0 0  ---> 1 zero, 2 whites, 3 zeros
         ls_mask = mask_np * 255
         return mask2rle(ls_mask)
+
+
+
+    def json_to_yolo(self, input_file, output_dir):
+
+        with open

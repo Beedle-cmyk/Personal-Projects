@@ -119,7 +119,7 @@ names: ["Class1", "Class2", "Class3"]"""
                     if project.is_dir() and project.name.find(project_type) != -1:
                         try:
                             parts = project.name.split("_")
-                            curr_version = float(parts[1][1:])
+                            curr_version = float(parts[1][1:])  #"v1.2" -> 1.2
 
                             if version < curr_version:
                                 version = curr_version
@@ -154,7 +154,6 @@ names: ["Class1", "Class2", "Class3"]"""
         findings_path = working_dir / "findings.txt"
         self.update_findings(findings_path, latest_findings)
 
-
         # data.yaml path overwrite
         yaml_lines = latest_data_yaml.splitlines()
         for i, line in enumerate(yaml_lines):
@@ -169,7 +168,7 @@ names: ["Class1", "Class2", "Class3"]"""
         original_data_dir = working_dir / "original_data"
         original_data_dir.mkdir()
 
-        data_folder = original_data_dir / "data"
+        data_folder = original_data_dir / "images"
         data_folder.mkdir()
 
         if data_dir is not None:

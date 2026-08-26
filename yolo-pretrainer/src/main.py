@@ -3,6 +3,7 @@ from label_studio_manager import LabelStudioManager
 from project_manager import ProjectManager
 from dotenv import load_dotenv
 from pathlib import Path
+from ultralytics import YOLO
 
 import os
 
@@ -21,16 +22,22 @@ label_config = Path("label_config.xml").read_text(encoding="utf-8")
 def main():
     #project_manager()
     #prelabel()
-    #labelstudio()
+    labelstudio()
+    #training()
+    
     pass
+
+def training():
+    model = YOLO("")
+
 
 def trainer():
     pass
 
 def labelstudio():
     ls = LabelStudioManager(api_key=api_key, data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data")
-    proj_id = ls.new_project(title="TESTING", label_config=label_config)
-    ls.import_json(project_id=proj_id, json_path="C:\\Personal-Projects\\yolo-pretrainer\\data\\outputs\\seg_predictions.json")
+    proj_id = ls.new_project(title="yolo26_v2.1_seg_", label_config=label_config)
+    #ls.import_json(project_id=proj_id, json_path="C:\\Personal-Projects\\yolo-pretrainer\\data\\outputs\\seg_predictions.json")
 
 def prelabel():
     prelabeler = Prelabeler(
