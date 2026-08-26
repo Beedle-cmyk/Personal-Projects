@@ -32,10 +32,10 @@ class AutoTrainer:
 
     def start(self, labels_json):
 
-        
+        labels_mapping = self.load_labels_mapping()
 
         labels_folder = self.project_manager.current_proj + "/original_data/labels"
-        self.label_studio_manager.seg_json_to_yolo(labels_json, labels_folder)
+        self.label_studio_manager.seg_json_to_yolo(labels_json, labels_folder, labels_mapping)
 
         #STEP 1 - initial training try out 3 fixed param configurations to get imgsz, batch size and epoch number
         self.trainer.train(cfg="")

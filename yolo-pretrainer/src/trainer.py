@@ -27,8 +27,5 @@ class Trainer:
     def train(self, auto_tune=False):
         if auto_tune:
             self.tune()
-            return self.model.train(data="data.yam;", cfg="best_hyperparameters.yaml")
-        return self.model.train(data="data.yaml", cfg="args.yaml") #from args.yaml
-
-    def tune(self):
-        self.model.tune()
+            return self.model.train(data="data.yaml", cfg="best_hyperparameters.yaml")
+        return self.model.train(data="data.yaml", cfg="args.yaml")  # from args.yaml
