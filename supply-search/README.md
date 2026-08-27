@@ -16,3 +16,5 @@ Excel has a built in feature for this
 7 - Verify the columns line up correctly.
 8 - Home → Close & Load.
 
+Note: I had to manually format a large chunk of the data due to poor formatting translation from the pdf
+
