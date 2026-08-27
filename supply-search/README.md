@@ -1,8 +1,17 @@
-# Introduction
+# Introductiom
 
-This project 
+# Project Overview
 
-# Step 1 - Convert PDF to Excel
+This project is a semi-Search Engine for description and key word based searching
+through a database. A webscraper is used to update the database with descriptions
+
+Frotend: React + TypeScript
+Backend: Python
+Datanase: SQLte
+Hosting: ???
+
+
+# Converting a PDF to Excel
 
 Excel has a built in feature for this
 
@@ -17,4 +26,3 @@ Excel has a built in feature for this
 8 - Home → Close & Load.
 
 Note: I had to manually format a large chunk of the data due to poor formatting translation from the pdf
-
