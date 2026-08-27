@@ -60,3 +60,5 @@ box_predictions.json
 
 .env
 label_config.xml
+
+doc_list/
