@@ -5,9 +5,9 @@ from pathlib import Path
 
 EXCEL_FILE = r"C:\Personal-Projects\supply-search\doc_list\TEST.xlsx"
 
-def convert_to_db(excel_file) -> str | Path:
+def convert_to_db(excel_file : str | Path) -> str | Path:
     """
-    Converts the provided excel file into a separate database file
+    Converts the provided excel file into a separate database file.
     This is stored in the same directory as the excel file location
 
     Args:
@@ -24,6 +24,7 @@ def convert_to_db(excel_file) -> str | Path:
     df.to_sql("suppliers", con, if_exists="replace", index=False)
     print(f"Imported {len(df)} suppliers")
 
+    # Verification it worked
     df = pd.read_sql_query(
         "SELECT * FROM suppliers LIMIT 10", con
     )
