@@ -1,8 +1,14 @@
-import os
+import numpy as np
 from pathlib import Path
-
-from anyio import Path
 from ultralytics import YOLO
+from utils import ml_stratifiers
+from collections import Counter
+import matplotlib.pyplot as plt
+
+import os
+import shutil
+import yaml
+import sys
 
 class Trainer:
     """ Class for training model
@@ -30,7 +36,7 @@ class Trainer:
             None
         """
 
-        self.model = YOLO("yolov8n-seg.pt")  # Initialize the YOLO model with a pre-trained segmentation model
+        self.model = None  # Initialize the YOLO model with a pre-trained segmentation model
 
 
     def train(self, cfg="args.yaml"):
@@ -52,7 +58,7 @@ class Trainer:
         self.model.tune(cfg=cfg, save_dir="best_hyperparameters.yaml")
 
 
-    def stratified_split(self, data_dir, yaml="data.yaml", train_pct=0.8):
+    def stratified_split(self, data_dir, data_yaml="data.yaml", train_pct=0.8, output_dir=None):
         """
         Performs a stratified split of the dataset into training and validation sets based on the provided percentage
 
@@ -71,18 +77,17 @@ class Trainer:
 
         if not os.path.isdir(data_dir):
             raise ValueError("Dataset folder not found.")
-
         if train_pct <= 0.01 or train_pct >= 0.99:
             raise ValueError("train_pct must be between 0.01 and 0.99")
 
         # Loading the class names from the YAML file
-        with open(yaml, "r") as f:
+        with open(data_yaml, "r") as f:
             data_yaml = yaml.safe_load(f)
-        class_names = data_yaml.get("names", [])
 
+        class_names = data_yaml.get("names", [])   
         if not class_names:
             raise ValueError("No class names found in data.yaml")
-
+        
         num_classes = len(class_names)
         print(f"\nFound {num_classes} classes: {class_names}")
         for i, name in enumerate(class_names):
@@ -91,15 +96,196 @@ class Trainer:
         # Initializing paths for images and labels
         input_image_path = Path(data_dir) / "images"
         input_label_path = Path(data_dir) / "labels"
-        cwd = Path.cwd()
+
+        if output_dir is None:
+            cwd = Path.cwd()
+        else:
+            cwd = output_dir
 
         train_img_path = cwd / "data" / "train" / "images"
         train_lbl_path = cwd / "data" / "train" / "labels"
-
         val_img_path = cwd / "data" / "val" / "images"
         val_lbl_path = cwd / "data" / "val" / "labels"
-
         for folder in [train_img_path, train_lbl_path, val_img_path, val_lbl_path]:
             folder.mkdir(parents=True, exist_ok=True)  # Create output folders if they don't exist
 
+        # Building Mutilabel Matrix for 
+        image_ids = []
+        label_vectors = []
+        label_files = list(input_label_path.glob("*.txt"))
+        print(f"\nFound {len(label_files)} label files")
+
+        for txt_file in label_files:
+            # set so duplicates are stored uniquely
+            classes_present = set()
+
+            # Class example stored like e.g.
+            # 2 0.604 0.54 0.592 0.54 0.588 0.544 0.584 where 2 is the id
+            with open(txt_file, "r") as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) == 0:
+                        continue
+                    try:
+                        class_id = int(parts[0])
+                        if 0 <= class_id < num_classes:
+                            classes_present.add(class_id)
+                    except ValueError:
+                        continue
+
+            # creates a empty list
+            multi_hot = [0] * num_classes
+            for cls in classes_present:
+                multi_hot[cls] = 1
+
+            image_ids.append(txt_file.stem)
+            label_vectors.append(multi_hot)
+
+        # Splitting the dataset using the lib
+        label_vectors = np.array(label_vectors)
+        msss = ml_stratifiers.MultilabelStratifiedShuffleSplit(n_splits=1, test_size=(1 - train_pct), random_state=42)
+        train_idx, val_idx = next(msss.split(image_ids, label_vectors))
+
+        train_images = [image_ids[i] for i in train_idx]
+        val_images = [image_ids[i] for i in val_idx]
+
+        print(f"\nTrain Images: {len(train_images)}")
+        print(f"Validation Images: {len(val_images)}")
+
+        def find_image(image_id):
+            IMAGE_EXTENSIONS = [
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".bmp",
+                ".tif",
+                ".tiff",
+                ".webp"
+            ]
+            for ext in IMAGE_EXTENSIONS:
+                candidate = input_image_path / f"{image_id}{ext}"
+                if candidate.exists():
+                    return candidate
+            return None
+
+        # Copy Train Files
+        print("\nCopying training files...")
+        for image_id in train_images:
+            image_file = find_image(image_id)
+            label_file = input_label_path / f"{image_id}.txt"
+
+            shutil.copy2(image_file, train_img_path / image_file.name)
+            shutil.copy2(label_file,train_lbl_path / label_file.name)
+
+        # Copy Validation Files
+        print("Copying validation files...")
+        for image_id in val_images:
+
+            image_file = find_image(image_id)
+            if image_file is None:
+                continue
+
+            label_file = input_label_path / f"{image_id}.txt"
+            shutil.copy2(image_file, val_img_path / image_file.name)
+            shutil.copy2(label_file, val_lbl_path / label_file.name)
+        print("\nDataset split complete.")
+
         
+        # Generate Statistics
+        train_counter = Trainer.count_yolo_labels(train_lbl_path)
+        val_counter = Trainer.count_yolo_labels(val_lbl_path)
+
+        Trainer.print_distribution(train_counter, class_names, "TRAIN")
+        Trainer.print_distribution(val_counter, class_names, "VALIDATION")
+
+        # Generate Graphs
+        Trainer.plot_distribution(train_counter, class_names, "Train Label Distribution", cwd / "train_distribution.png")
+        Trainer.plot_distribution(val_counter, class_names, "Validation Label Distribution", cwd / "val_distribution.png")
+        print("\nDone!")
+        print("Generated:")
+        print("  train_distribution.png")
+        print("  val_distribution.png")
+
+
+    def count_yolo_labels(labels_dir):
+        """
+        Count object instances from YOLO label files
+        """
+        counter = Counter()
+        txt_files = list(Path(labels_dir).rglob("*.txt"))
+
+        for txt_file in txt_files:
+            with open(txt_file, "r") as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if not parts:
+                        continue
+                    try:
+                        class_id = int(parts[0])
+                        counter[class_id] += 1
+                    except ValueError:
+                        continue
+        return counter
+
+    
+    def print_distribution(counter, class_names, split_name):
+
+        total = sum(counter.values())
+
+        print(f"\n{'=' * 50}")
+        print(f"{split_name} DISTRIBUTION")
+        print(f"{'=' * 50}")
+
+        for class_id, count in sorted(counter.items()):
+
+            class_name = (
+                class_names[class_id]
+                if class_id < len(class_names)
+                else f"Class {class_id}"
+            )
+
+            percentage = (count / total * 100) if total else 0
+
+            print(
+                f"{class_name:<15}"
+                f"{count:>8} labels"
+                f" ({percentage:.2f}%)"
+            )
+
+
+    def plot_distribution(counter, class_names, title, output_file):
+        class_ids = sorted(counter.keys())
+        counts = [counter[cid] for cid in class_ids]
+
+        labels = [
+            class_names[cid]
+            if cid < len(class_names)
+            else f"Class {cid}"
+            for cid in class_ids
+        ]
+
+        plt.figure(figsize=(12, 6))
+
+        bars = plt.bar(labels, counts)
+
+        plt.title(title)
+        plt.xlabel("Class")
+        plt.ylabel("Number of Labels")
+
+        plt.xticks(rotation=45)
+
+        for bar, count in zip(bars, counts):
+            plt.text(
+                bar.get_x() + bar.get_width() / 2,
+                count,
+                str(count),
+                ha="center",
+                va="bottom"
+            )
+
+        plt.tight_layout()
+        plt.savefig(output_file, dpi=300)
+
+        print(f"\nSaved graph: {output_file}")
+
+        plt.close()

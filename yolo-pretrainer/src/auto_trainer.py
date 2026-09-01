@@ -13,9 +13,9 @@ class AutoTrainer:
     @author: Sami Ibrahim
     @version: 8/21/2026
     
+    Methods:
+        __init__:
     """
-
-    DEFAULT_PROJECT_DIR = r"\projects"
 
     def __init__(
             self,
@@ -28,14 +28,15 @@ class AutoTrainer:
 
         # Object Attributes
         self.project_manager = ProjectManager(proj_dir)
+        self.trainer = Trainer()
         #self.evaluator = Evaluator(self.project_manager)
         #self.prelabeler = Prelabeler()
-        #self.trainer = Trainer()
-
+        
     
-    def setup_project(self, label_json, label_config=None):
+
+    def setup_project(self, label_json=None, label_config=None):
         """
-        Sets up a new project by creating the necessary directory structure and converting Label Studio JSON labels to YOLO format
+        Sets up a new project by creating the necessary directory structure and converting Label Studio JSON labels to YOLO format if provided
 
         Args:
             label_json (str | Path): Path to the Label Studio labels exported json file
@@ -44,11 +45,16 @@ class AutoTrainer:
         Returns:
             None
         """
+
         self.project_manager.create_project(data_dir=self.data_dir, label_config=label_config)
 
-        labels_dir = Path(self.project_manager.current_proj) / "original_data" / "labels"
+        if label_json:
+            original_data = Path(self.project_manager.current_proj) / "original_data"
+            yaml_dir = Path(self.project_manager.current_proj) / "data.yaml"
 
-        LabelStudioManager.seg_json_to_yolo(label_json, labels_dir, self.load_labels_mapping())
+            LabelStudioManager.seg_json_to_yolo(label_json, original_data / "labels", self.load_labels_mapping())
+            self.trainer.stratified_split(data_dir=original_data, data_yaml=yaml_dir, output_dir=self.project_manager.current_proj)
+
         
 
     def default_train(self, args_yaml="args.yaml"):
@@ -62,7 +68,6 @@ class AutoTrainer:
         Returns:
             None
         """
-        
         self.model = self.trainer.train(cfg=args_yaml) 
 
 

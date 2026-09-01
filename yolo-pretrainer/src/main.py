@@ -1,6 +1,4 @@
 from prelabeler import Prelabeler
-from label_studio_manager import LabelStudioManager
-from project_manager import ProjectManager
 from dotenv import load_dotenv
 from pathlib import Path
 from ultralytics import YOLO
@@ -30,10 +28,15 @@ def autotrain():
         proj_dir=r"C:\Personal-Projects\yolo-pretrainer\projects",
         data_dir=r"C:\yolo\yolo26_v2.1_seg_234\dat\images",
     )
-    print(label_config)
-    auto_trainer.setup_project(label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json", label_config=Path(r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml"))
-    #auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
+
+    auto_trainer.setup_project(
+        label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json",
+        label_config=r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml"
+    )
+
     #auto_trainer.default_train(args_yaml="cfg/args.yaml")
+    #auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
+    
 
 
 
