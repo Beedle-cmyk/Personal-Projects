@@ -1,3 +1,7 @@
+import os
+from pathlib import Path
+
+from anyio import Path
 from ultralytics import YOLO
 
 class Trainer:
@@ -15,17 +19,87 @@ class Trainer:
         __init__:
     """
 
-    def __init__(self, model):
+    def __init__(self):
         """
-        Initializes blah
+        Initializes the Trainer class and sets up the YOLO model for training
 
         Args:
-            model: pre-trained model to load
+            None
+        
+        Returns:
+            None
         """
-        self.model = YOLO(model)
 
-    def train(self, auto_tune=False):
-        if auto_tune:
-            self.tune()
-            return self.model.train(data="data.yaml", cfg="best_hyperparameters.yaml")
-        return self.model.train(data="data.yaml", cfg="args.yaml")  # from args.yaml
+        self.model = YOLO("yolov8n-seg.pt")  # Initialize the YOLO model with a pre-trained segmentation model
+
+
+    def train(self, cfg="args.yaml"):
+        
+        return self.model.train(cfg=cfg)  # from the specified config file
+
+
+    def tune(self, cfg="args.yaml"):
+        """
+        Tunes the model hyperparameters using the provided data and saves the best hyperparameters to a file
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        self.model.tune(cfg=cfg, save_dir="best_hyperparameters.yaml")
+
+
+    def stratified_split(self, data_dir, yaml="data.yaml", train_pct=0.8):
+        """
+        Performs a stratified split of the dataset into training and validation sets based on the provided percentage
+
+        Args:
+            data_dir (str): Path to the directory containing the dataset
+            yaml (str): Path to the YOLO data.yaml file
+            train_pct (float): Percentage of data to be used for training (default is 0.8)
+        
+        Raises:
+            ValueError: If the dataset folder is not found or if train_pct is not between 0.01 and 0.99 or 
+                if the class names cannot be loaded from the YAML file
+
+        Returns:
+            None
+        """
+
+        if not os.path.isdir(data_dir):
+            raise ValueError("Dataset folder not found.")
+
+        if train_pct <= 0.01 or train_pct >= 0.99:
+            raise ValueError("train_pct must be between 0.01 and 0.99")
+
+        # Loading the class names from the YAML file
+        with open(yaml, "r") as f:
+            data_yaml = yaml.safe_load(f)
+        class_names = data_yaml.get("names", [])
+
+        if not class_names:
+            raise ValueError("No class names found in data.yaml")
+
+        num_classes = len(class_names)
+        print(f"\nFound {num_classes} classes: {class_names}")
+        for i, name in enumerate(class_names):
+            print(f"{i}: {name}")
+
+        # Initializing paths for images and labels
+        input_image_path = Path(data_dir) / "images"
+        input_label_path = Path(data_dir) / "labels"
+        cwd = Path.cwd()
+
+        train_img_path = cwd / "data" / "train" / "images"
+        train_lbl_path = cwd / "data" / "train" / "labels"
+
+        val_img_path = cwd / "data" / "val" / "images"
+        val_lbl_path = cwd / "data" / "val" / "labels"
+
+        for folder in [train_img_path, train_lbl_path, val_img_path, val_lbl_path]:
+            folder.mkdir(parents=True, exist_ok=True)  # Create output folders if they don't exist
+
+        

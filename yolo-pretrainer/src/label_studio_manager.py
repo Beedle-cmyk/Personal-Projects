@@ -31,7 +31,7 @@ class LabelStudioManager:
     
     def __init__(self, api_key : str | Path, data_dir : str | Path, ls_path : str | Path, launch=True) -> None:
         """
-        Initializes the Label Studio API
+        Initializes the Label Studio API and launches the label studio environment if specified
 
         Args:
             api_key (str): Label Studio unique API key found in user settings
@@ -46,7 +46,7 @@ class LabelStudioManager:
 
         if launch:
             self.launch()
-            time.sleep(9)  # Wait for Label Studio to start
+            time.sleep(10)  # Wait for Label Studio to start
 
         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
         me = self.client.users.whoami()
@@ -61,7 +61,7 @@ class LabelStudioManager:
         Note: To stop the process, you will need to manually terminate it using the terminate method
 
         Args:
-            ls_path (str): Path to Label Studio exe directory (non-inclusive of executable in path)
+            None
         
         Returns:
             None
@@ -81,6 +81,9 @@ class LabelStudioManager:
         """
         Terminates the Label Studio process
 
+        Args:
+            None
+
         Returns:
             None
         """
@@ -91,7 +94,7 @@ class LabelStudioManager:
 
 
 
-    def new_project(self, title : str, label_config : str) -> int:
+    def create_project(self, title : str, label_config : str) -> int:
         """
         Creates a new label studio project
 
@@ -167,85 +170,85 @@ class LabelStudioManager:
 
 
 
-def seg_json_to_yolo(input_file, output_dir, labels_mapping):
-    """
-    Function for converting a label studio exported json file 
-    into yolo compatible labels .txt files
+    def seg_json_to_yolo(input_file, output_dir, labels_mapping):
+        """
+        Function for converting a label studio exported json file 
+        into yolo compatible labels .txt files
 
-    Args:
-        input_file : the exported label studio 
-        output_dir : the directory to store labels
+        Args:
+            input_file : the exported label studio 
+            output_dir : the directory to store labels
 
-    Returns:
-        None
-    """
+        Returns:
+            None
+        """
 
-    with open(input_file, "r") as f:
-        data = json.load(f)
+        with open(input_file, "r") as f:
+            data = json.load(f)
 
-    skipped_labels = []
+        skipped_labels = []
 
-    for task in data:
+        for task in data:
 
-        image_path = task["data"]["image"]
-        if "?d=" in image_path:
-            image_path = image_path.split("?d=")[-1]
+            image_path = task["data"]["image"]
+            if "?d=" in image_path:
+                image_path = image_path.split("?d=")[-1]
 
-        image_path = unquote(image_path)
-        image_path = image_path.replace("\\", "/")
-        image_name = os.path.splitext(os.path.basename(image_path))[0]
+            image_path = unquote(image_path)
+            image_path = image_path.replace("\\", "/")
+            image_name = os.path.splitext(os.path.basename(image_path))[0]
 
-        # Skip image if any annotation was cancelled
-        if any(ann.get("was_cancelled", False) for ann in task.get("annotations", [])):
-            print(f"Skipping cancelled image: {image_name}")
-            continue
+            # Skip image if any annotation was cancelled
+            if any(ann.get("was_cancelled", False) for ann in task.get("annotations", [])):
+                print(f"Skipping cancelled image: {image_name}")
+                continue
 
-        output_lines = []
-        for annotation in task.get("annotations", []):
-            for item in annotation["result"]:
+            output_lines = []
+            for annotation in task.get("annotations", []):
+                for item in annotation["result"]:
 
-                height = item["original_height"]
-                width = item["original_width"]
+                    height = item["original_height"]
+                    width = item["original_width"]
 
-                if item.get("type") == "brushlabels":
+                    if item.get("type") == "brushlabels":
 
-                    pts = brush_to_yolo(item["value"]["rle"], height, width)
-                    class_name = item["value"]["brushlabels"][0]
+                        pts = LabelStudioManager.brush_to_yolo(item["value"]["rle"], height, width)
+                        class_name = item["value"]["brushlabels"][0]
 
-                elif item.get("type") == "polygonlabels":
+                    elif item.get("type") == "polygonlabels":
 
-                    pts = polygon_to_yolo(item["value"]["points"])
-                    class_name = item["value"]["polygonlabels"][0]
+                        pts = LabelStudioManager.polygon_to_yolo(item["value"]["points"])
+                        class_name = item["value"]["polygonlabels"][0]
 
-                else:
-                    skipped_labels.append({
-                        "task_id": task.get("id"),
-                        "type": item.get("type"),
-                        "id": item.get("id")
-                    })
-                    continue
+                    else:
+                        skipped_labels.append({
+                            "task_id": task.get("id"),
+                            "type": item.get("type"),
+                            "id": item.get("id")
+                        })
+                        continue
 
-                # Require at least 3 points
-                if len(pts) < 6:
-                    print(f"Skipping empty polygon: " f"{image_name} ({class_name})")
-                    continue
+                    # Require at least 3 points
+                    if len(pts) < 6:
+                        print(f"Skipping empty polygon: " f"{image_name} ({class_name})")
+                        continue
 
-                class_id = mapping_class(class_name, labels_mapping)
-                output_lines.append(f"{class_id} {' '.join(map(str, pts))}")
+                    class_id = LabelStudioManager.mapping_class(class_name, labels_mapping)
+                    output_lines.append(f"{class_id} {' '.join(map(str, pts))}")
 
-        output_file = os.path.join(output_dir, f"{image_name}.txt")
+            output_file = os.path.join(output_dir, f"{image_name}.txt")
 
-        with open(output_file, "w") as f:
-            for line in output_lines:
-                f.write(line + "\n")
+            with open(output_file, "w") as f:
+                for line in output_lines:
+                    f.write(line + "\n")
 
-        print(f"Converted {image_name}.txt " f"({len(output_lines)} objects)")
-    print("Conversion completed.")
+            print(f"Converted {image_name}.txt " f"({len(output_lines)} objects)")
+        print("Conversion completed.")
 
-    if skipped_labels:
-        print("\nSkipped labels:")
-        for label in skipped_labels:
-            print(label)
+        if skipped_labels:
+            print("\nSkipped labels:")
+            for label in skipped_labels:
+                print(label)
 
 
 
@@ -253,7 +256,11 @@ def seg_json_to_yolo(input_file, output_dir, labels_mapping):
         """
         Helper method that converts 
         """
-        image = brush.decode_rle(rle, height, width)
+        image = brush.decode_rle(rle)
+        image = np.reshape(image, [height, width, 4])
+
+        # Alpha channel contains the mask
+        image = image[:, :, 3]
 
         _, mask = cv2.threshold(image, 1, 255, cv2.THRESH_BINARY)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

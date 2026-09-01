@@ -15,7 +15,7 @@ class AutoTrainer:
     
     """
 
-    DEFAULT_PROJECT_DIR = r"..\projects"
+    DEFAULT_PROJECT_DIR = r"\projects"
 
     def __init__(
             self,
@@ -31,6 +31,24 @@ class AutoTrainer:
         #self.evaluator = Evaluator(self.project_manager)
         #self.prelabeler = Prelabeler()
         #self.trainer = Trainer()
+
+    
+    def setup_project(self, label_json, label_config=None):
+        """
+        Sets up a new project by creating the necessary directory structure and converting Label Studio JSON labels to YOLO format
+
+        Args:
+            label_json (str | Path): Path to the Label Studio labels exported json file
+            label_config (str | Path): Optional path to the Label Studio label class configuration file (default is None)
+
+        Returns:
+            None
+        """
+        self.project_manager.create_project(data_dir=self.data_dir, label_config=label_config)
+
+        labels_dir = Path(self.project_manager.current_proj) / "original_data" / "labels"
+
+        LabelStudioManager.seg_json_to_yolo(label_json, labels_dir, self.load_labels_mapping())
         
 
     def default_train(self, args_yaml="args.yaml"):
@@ -39,12 +57,12 @@ class AutoTrainer:
 
         Args:
             args_yaml (str): Path to the args.yaml file containing training parameters
+            studio_label_file (str | Path): Optional path to the Label Studio labels exported json file (default is None)
         
         Returns:
             None
         """
-
-        self.project_manager.create_project(data_dir=self.data_dir)
+        
         self.model = self.trainer.train(cfg=args_yaml) 
 
 
@@ -62,32 +80,21 @@ class AutoTrainer:
         """
 
         self.label_studio_manager = LabelStudioManager(api_key=api_key, data_dir=self.data_dir, ls_path=ls_path)
+
         
 
-    def start(self, labels_json, model: str | Path,):
-        self.project_manager.create_project(name="auto-train_" + self.trainer.model, data_dir=self.data_dir)
-
-        labels_mapping = self.load_labels_mapping()
-
-        labels_folder = self.project_manager.current_proj + "/original_data/labels"
-        self.label_studio_manager.seg_json_to_yolo(labels_json, labels_folder, labels_mapping)
-
-        #STEP 1 - initial training try out 3 fixed param configurations to get imgsz, batch size and epoch number
-        self.trainer.train(cfg="")
-        self.trainer.tune()
-
-        paramsets = self.evaluator.params()
-        self.trainer.train(paramsets)
-        self.evaluator.generate_report()
-        self.prelabeler.seg_predict()
-        self.label_studio_manager.launch()
-        self.label_studio_manager.import_json()
-        # Review on labelstudio
-    
-
     def load_labels_mapping(self):
-    
-        with open(self.project_manager.current_proj + "/data.yaml", "r") as f:
+        """
+        Loads the label mapping from the data.yaml file in the current project directory
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        with open(Path(self.project_manager.current_proj) / "data.yaml", "r") as f:
             data = yaml.safe_load(f)
 
         labels_mapping = {

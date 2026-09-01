@@ -1,7 +1,0 @@
-path: C:\Personal-Projects\yolo-pretrainer\projects\auto-train_yolo26s-seg\data
-train: train\images
-val: val\images
-
-nc: 7
-
-names: ["Class1", "Class2", "Class3", "Class4", "Class5", "Class6", "Class7"]

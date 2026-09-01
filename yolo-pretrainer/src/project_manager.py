@@ -1,4 +1,5 @@
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import os
 import shutil
@@ -71,7 +72,7 @@ names: ["Class1", "Class2", "Class3"]"""
         
 
 
-    def create_project(self, name=None, data_dir=None, version=None, project_type="seg", yolo_version="yolo26") -> Path:
+    def create_project(self, name=None, data_dir=None, version=None, project_type="seg", yolo_version="yolo26", label_config=None) -> Path:
         """
         Creates a new project within the project directory with my own custom
         pre-defined structure example:
@@ -90,6 +91,7 @@ names: ["Class1", "Class2", "Class3"]"""
             version (float): optionally set project version
             project_type (str): define project type, defaults are "seg" or "box"
             yolo_version (str): define yolo version, defaults is "yolo26"
+            label_config (str | Path): optionally provide a label class configuration xml file for Label Studio
         
         Raises:
             ValueError if project_type is not supported
@@ -163,8 +165,24 @@ names: ["Class1", "Class2", "Class3"]"""
                 break
         latest_data_yaml = "\n".join(yaml_lines)
 
+        # Checking if a label config is provided, if so then update the data.yaml with the labels and number of classes
+        if label_config is not None:
+            labels = ProjectManager.get_labels_from_config(label_config)
+            yaml_lines = latest_data_yaml.splitlines()
+
+            for i, line in enumerate(yaml_lines):
+
+                if line.strip().startswith("names:"):
+                    yaml_lines[i] = f"names: {labels}"
+
+                if line.strip().startswith("nc:"):
+                    yaml_lines[i] = f"nc: {len(labels)}"
+
+        latest_data_yaml = "\n".join(yaml_lines)
+
         with open(working_dir / "data.yaml", "w") as file:
             file.write(latest_data_yaml)
+
 
         original_data_dir = working_dir / "original_data"
         original_data_dir.mkdir()  # Create the original_data directory
@@ -226,3 +244,22 @@ names: ["Class1", "Class2", "Class3"]"""
 
         with open(findings_file, "w") as file:
             file.write(contents)
+
+
+    def get_labels_from_config(label_config):
+        """
+        Extracts labels from the LabelStudio Formatted xml configuration file for classes
+
+        Args:
+            label_config (Path | str) : path to xml config file
+        
+        Returns: 
+            None
+        """
+        
+        tree = ET.parse(label_config)
+        root = tree.getroot()
+
+        labels = [label.get("value") for label in root.iter("Label")]
+
+        return labels

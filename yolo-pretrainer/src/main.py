@@ -18,7 +18,7 @@ MAX_CONF = 1.0
 load_dotenv()
 api_key = os.environ["API_KEY"]
 ls_path = os.environ["LABEL_STUDIO_PATH"]
-label_config = Path("cfg/label_config.xml").read_text(encoding="utf-8")
+label_config = Path(r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml").read_text(encoding="utf-8")
 
 def main():
     autotrain()
@@ -27,11 +27,13 @@ def main():
 def autotrain():
 
     auto_trainer = AutoTrainer(
-        proj_dir=AutoTrainer.DEFAULT_PROJECT_DIR,
+        proj_dir=r"C:\Personal-Projects\yolo-pretrainer\projects",
         data_dir=r"C:\yolo\yolo26_v2.1_seg_234\dat\images",
     )
-
-    auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
+    print(label_config)
+    auto_trainer.setup_project(label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json", label_config=Path(r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml"))
+    #auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
+    #auto_trainer.default_train(args_yaml="cfg/args.yaml")
 
 
 
@@ -42,13 +44,6 @@ def training():
 
 def trainer():
     pass
-
-
-
-def labelstudio():
-    ls = LabelStudioManager(api_key=api_key, data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data")
-    proj_id = ls.new_project(title="yolo26_v2.1_seg_", label_config=label_config)
-    ls.import_json(project_id=proj_id, json_path="C:\\Personal-Projects\\yolo-pretrainer\\data\\outputs\\seg_predictions.json")
 
 
 
@@ -68,11 +63,6 @@ def prelabel():
     #     overlap_threshold=0.7,
     #     check_duplicates=True
     # )
-
-def project_manager():
-
-    p = ProjectManager(r"C:\Personal-Projects\yolo-pretrainer\projects")
-    p.create_project()
 
 if __name__ == "__main__":
     main()
