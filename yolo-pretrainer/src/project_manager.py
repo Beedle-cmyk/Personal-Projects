@@ -52,7 +52,7 @@ names: ["Class1", "Class2", "Class3"]"""
 
     SUPPORTED_PROJECT_TYPES = {"box", "seg"}
     
-    def __init__(self, project_dir):
+    def __init__(self, project_dir : str | Path) -> None:
         """
         Initializes the project directory where your projects are stored
 
@@ -71,10 +71,10 @@ names: ["Class1", "Class2", "Class3"]"""
         
 
 
-    def create_project(self, name=None, data_dir=None, version=None, project_type="box") -> Path:
+    def create_project(self, name=None, data_dir=None, version=None, project_type="seg", yolo_version="yolo26") -> Path:
         """
         Creates a new project within the project directory with my own custom
-        pre-defined structure:
+        pre-defined structure example:
 
         Project Directory --- yolo26_v1.2_box_400 ----- original_data ------ images
                                                      |                       
@@ -89,6 +89,7 @@ names: ["Class1", "Class2", "Class3"]"""
             data_dir (str | Path): directory/location of image data in file system
             version (float): optionally set project version
             project_type (str): define project type, defaults are "seg" or "box"
+            yolo_version (str): define yolo version, defaults is "yolo26"
         
         Raises:
             ValueError if project_type is not supported
@@ -141,7 +142,7 @@ names: ["Class1", "Class2", "Class3"]"""
                         
                 version = round(version + 0.1, 1)
 
-            full_name = "yolo26" + "_v" + str(version) + "_" + project_type + "_" + str(self.data_num)
+            full_name = yolo_version + "_v" + str(version) + "_" + project_type + "_" + str(self.data_num)
             working_dir = self.project_dir / full_name
 
         else:
@@ -149,10 +150,10 @@ names: ["Class1", "Class2", "Class3"]"""
 
         if working_dir.exists():
             raise FileExistsError(f"Error {working_dir} already exists")
-        working_dir.mkdir()
+        working_dir.mkdir()  # Create the project directory
 
         findings_path = working_dir / "findings.txt"
-        self.update_findings(findings_path, latest_findings)
+        self.update_findings(findings_path, latest_findings)  # Create the findings.txt file with the latest findings
 
         # data.yaml path overwrite
         yaml_lines = latest_data_yaml.splitlines()
@@ -166,13 +167,13 @@ names: ["Class1", "Class2", "Class3"]"""
             file.write(latest_data_yaml)
 
         original_data_dir = working_dir / "original_data"
-        original_data_dir.mkdir()
+        original_data_dir.mkdir()  # Create the original_data directory
 
         labels_folder = original_data_dir / "labels"
-        labels_folder.mkdir()
+        labels_folder.mkdir()  # Create the labels directory
 
         data_folder = original_data_dir / "images"
-        data_folder.mkdir()
+        data_folder.mkdir()  # Create the images directory
 
         if data_dir is not None:
             shutil.copytree(data_dir, data_folder, dirs_exist_ok=True)
@@ -184,7 +185,7 @@ names: ["Class1", "Class2", "Class3"]"""
 
 
 
-    def count_data(self, current_proj) -> int:
+    def count_data(self, current_proj : str | Path) -> int:
         """
         Stores and returns the total count of data images for the specified project
         Note: will switch the current working project to the one specified
@@ -210,7 +211,7 @@ names: ["Class1", "Class2", "Class3"]"""
 
 
 
-    def update_findings(self, findings_file, contents):
+    def update_findings(self, findings_file : str | Path, contents : str) -> None:
         """
         Updates the findings file with contents
         TODO: will be useful for the Evaluator class when updating findings

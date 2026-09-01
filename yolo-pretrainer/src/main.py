@@ -4,6 +4,7 @@ from project_manager import ProjectManager
 from dotenv import load_dotenv
 from pathlib import Path
 from ultralytics import YOLO
+from auto_trainer import AutoTrainer
 
 import os
 
@@ -17,27 +18,39 @@ MAX_CONF = 1.0
 load_dotenv()
 api_key = os.environ["API_KEY"]
 ls_path = os.environ["LABEL_STUDIO_PATH"]
-label_config = Path("label_config.xml").read_text(encoding="utf-8")
+label_config = Path("cfg/label_config.xml").read_text(encoding="utf-8")
 
 def main():
-    #project_manager()
-    #prelabel()
-    labelstudio()
-    #training()
-    
-    pass
+    autotrain()
+
+
+def autotrain():
+
+    auto_trainer = AutoTrainer(
+        proj_dir=AutoTrainer.DEFAULT_PROJECT_DIR,
+        data_dir=r"C:\yolo\yolo26_v2.1_seg_234\dat\images",
+    )
+
+    auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
+
+
 
 def training():
     model = YOLO("")
 
 
+
 def trainer():
     pass
+
+
 
 def labelstudio():
     ls = LabelStudioManager(api_key=api_key, data_dir="C:\\Personal-Projects\\yolo-pretrainer\\data")
     proj_id = ls.new_project(title="yolo26_v2.1_seg_", label_config=label_config)
     ls.import_json(project_id=proj_id, json_path="C:\\Personal-Projects\\yolo-pretrainer\\data\\outputs\\seg_predictions.json")
+
+
 
 def prelabel():
     prelabeler = Prelabeler(

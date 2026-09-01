@@ -3,6 +3,7 @@ from trainer import Trainer
 from evaluator import Evaluator
 from prelabeler import Prelabeler
 from label_studio_manager import LabelStudioManager
+from pathlib import Path
 
 import yaml
 
@@ -14,23 +15,57 @@ class AutoTrainer:
     
     """
 
+    DEFAULT_PROJECT_DIR = r"..\projects"
+
     def __init__(
             self,
-            proj_dir,
-            data_dir,
-            model,
+            proj_dir : str | Path,
+            data_dir : str | Path,
         ):
+        # Primitive Attributes
+        self.data_dir = data_dir
+        self.model = None
+
+        # Object Attributes
         self.project_manager = ProjectManager(proj_dir)
-        self.evaluator = Evaluator(self.project_manager)
-        self.trainer = Trainer(model)
-        self.prelabeler = Prelabeler()
-        self.label_studio_manager = LabelStudioManager()
+        #self.evaluator = Evaluator(self.project_manager)
+        #self.prelabeler = Prelabeler()
+        #self.trainer = Trainer()
+        
 
-        self.project_manager.create_project(name="auto-train_" + model, data_dir=data_dir)
+    def default_train(self, args_yaml="args.yaml"):
+        """
+        Default training method that creates a new project and trains the model with the provided args.yaml file
+
+        Args:
+            args_yaml (str): Path to the args.yaml file containing training parameters
+        
+        Returns:
+            None
+        """
+
+        self.project_manager.create_project(data_dir=self.data_dir)
+        self.model = self.trainer.train(cfg=args_yaml) 
 
 
 
-    def start(self, labels_json):
+    def studio_launch(self, api_key, ls_path) -> None:
+        """
+        Launches the Label Studio environment for reviewing and editing labels
+
+        Args:
+            api_key (str): Label Studio unique API key found in user settings
+            ls_path (str | Path): Path to Label Studio exe directory (non-inclusive of executable in path)
+        
+        Returns:
+            None
+        """
+
+        self.label_studio_manager = LabelStudioManager(api_key=api_key, data_dir=self.data_dir, ls_path=ls_path)
+        
+
+    def start(self, labels_json, model: str | Path,):
+        self.project_manager.create_project(name="auto-train_" + self.trainer.model, data_dir=self.data_dir)
 
         labels_mapping = self.load_labels_mapping()
 

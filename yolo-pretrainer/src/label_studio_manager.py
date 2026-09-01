@@ -8,6 +8,7 @@ import cv2
 import subprocess
 import json
 import os
+import time
 
 class LabelStudioManager:
     """Class containing utilities for interfacing with label studio
@@ -27,39 +28,37 @@ class LabelStudioManager:
     """
 
     LABEL_STUDIO_URL = "http://localhost:8080"
-    # MAX_LS_INSTANCES = 10
     
-    def __init__(self, api_key, data_dir):
+    def __init__(self, api_key : str | Path, data_dir : str | Path, ls_path : str | Path, launch=True) -> None:
         """
         Initializes the Label Studio API
 
         Args:
             api_key (str): Label Studio unique API key found in user settings
             data_dir (str): Path to data directory 
+            ls_path (str): Path to Label Studio exe directory (non-inclusive of executable in path)
+            launch (bool): Whether to launch Label Studio upon initialization
         """
 
         self.data_dir = data_dir
         self.project_id = None
+        self.ls_path = ls_path
+
+        if launch:
+            self.launch()
+            time.sleep(9)  # Wait for Label Studio to start
 
         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
-        
-        # for i in range(self.MAX_LS_INSTANCES):
-        #     try:
-        #         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL + str(8080 + i), api_key=api_key)
-        #     except KeyError:
-        #         pass
-
         me = self.client.users.whoami()
         print("username:", me.username)
         print("email:", me.email)
 
 
 
-    def launch(self, ls_path) -> None:
+    def launch(self) -> None:
         """
-        Launches the Label Studio environment
-        Will set the data directory if a path exists
-        TODO: Launch separately from the script
+        Launches the Label Studio environment. Will set the data directory if a path exists
+        Note: To stop the process, you will need to manually terminate it using the terminate method
 
         Args:
             ls_path (str): Path to Label Studio exe directory (non-inclusive of executable in path)
@@ -73,13 +72,26 @@ class LabelStudioManager:
             env["LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED"] = "true"
             env["LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT"] = self.data_dir
 
-        process = subprocess.Popen([os.path.join(ls_path, "label-studio.exe")], env=env, cwd=self.ls_path,)
-        
-        return process
+        self.process = subprocess.Popen([os.path.join(self.ls_path, "label-studio.exe")], env=env, cwd=self.ls_path)
+        return self.process
 
 
 
-    def new_project(self, title, label_config) -> int:
+    def terminate(self) -> None:
+        """
+        Terminates the Label Studio process
+
+        Returns:
+            None
+        """
+        if hasattr(self, "process"):
+            self.process.terminate()
+            self.process.wait()
+            print("Label Studio process terminated.")
+
+
+
+    def new_project(self, title : str, label_config : str) -> int:
         """
         Creates a new label studio project
 

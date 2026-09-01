@@ -1,3 +1,5 @@
+# The DEFAULT configuration for training a YOLOv8 model on a custom dataset. 
+# This file is used by the `trainer.py` script to set various training parameters.
 task: segment
 mode: train
 model: yolo26s-seg.pt
@@ -105,5 +107,4 @@ copy_paste: 0.0
 copy_paste_mode: flip
 auto_augment: randaugment
 erasing: 0.4
-cfg: null
 tracker: botsort.yaml
