@@ -82,7 +82,7 @@ class AutoTrainer:
 
         self.model = self.trainer.train(cfg=args_yaml, current_project_dir=current_proj_dir) 
 
-
+        
 
     def studio_launch(self, api_key, ls_path) -> None:
         """

@@ -1,0 +1,8 @@
+images/
+
+seg_predictions.json
+box_predictions.json
+
+.env
+label_config.xml
+projects/
