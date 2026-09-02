@@ -6,6 +6,7 @@ from label_studio_manager import LabelStudioManager
 from pathlib import Path
 
 import yaml
+import os
 
 class AutoTrainer:
     """ Manager class where all the magic happens folks
@@ -17,11 +18,7 @@ class AutoTrainer:
         __init__:
     """
 
-    def __init__(
-            self,
-            proj_dir : str | Path,
-            data_dir : str | Path,
-        ):
+    def __init__(self, proj_dir : str | Path, data_dir : str | Path,):
         # Primitive Attributes
         self.data_dir = data_dir
         self.current_proj_dir = None
@@ -31,9 +28,7 @@ class AutoTrainer:
         self.project_manager = ProjectManager(proj_dir)
         self.trainer = Trainer()
         #self.evaluator = Evaluator(self.project_manager)
-        #self.prelabeler = Prelabeler()
         
-    
 
     def setup_project(self, label_json=None, label_config=None):
         """
@@ -54,10 +49,58 @@ class AutoTrainer:
             original_data = Path(self.project_manager.current_proj) / "original_data"
             yaml_dir = Path(self.project_manager.current_proj) / "data.yaml"
 
-            LabelStudioManager.seg_json_to_yolo(label_json, original_data / "labels", self.load_labels_mapping())
+            LabelStudioManager.seg_json_to_yolo(label_json, original_data / "labels", 
+                                                LabelStudioManager.load_labels_mapping(self.current_proj_dir))
+
+            label_count = sum(1 for item in (original_data / "labels").iterdir() if item.is_file())
+            file_count = self.project_manager.count_data(original_data)
+
+            if label_count < file_count:
+                AutoTrainer.cleanup_images(original_data / "labels", original_data / "images")
+            elif label_count > file_count:
+                raise ValueError(f"WARNING: More Labels than Image files. Please Check {original_data}")
+
             self.trainer.stratified_split(data_dir=original_data, data_yaml=yaml_dir, output_dir=self.project_manager.current_proj)
 
-        
+
+
+    def cleanup_images(labels_dir : (str | Path), images_dir : (str | Path)) -> None:
+        """
+        Helper Method for providing cleaning up data such that the label/class count matches the data count
+
+        Args:
+            labels_dir (str | Path): label/class directory
+            images_dir (str | Path): data directory
+
+        Returns:
+            None
+        """
+
+        # Function to normalize names (remove "-something")
+        def normalize(name): return name.split("-")[0].lower()
+
+        # Get normalized label names
+        label_names = {
+            normalize(os.path.splitext(f)[0])
+            for f in os.listdir(labels_dir)
+            if f.endswith(".txt")
+        }
+
+        deleted = 0
+
+        for image_file in os.listdir(images_dir):
+            if image_file.lower().endswith((".png", ".jpg", ".jpeg")):
+                image_name = normalize(os.path.splitext(image_file)[0])
+
+                if image_name not in label_names:
+                    image_path = os.path.join(images_dir, image_file)
+                    os.remove(image_path)
+                    print("Deleted:", image_file)
+                    deleted += 1
+
+        print(f"Done. Deleted {deleted} images.")
+
+                
 
     def default_train(self, current_proj_dir=None, args_yaml=None):
         """
@@ -82,7 +125,30 @@ class AutoTrainer:
 
         self.model = self.trainer.train(cfg=args_yaml, current_project_dir=current_proj_dir) 
 
-        
+
+
+    def default_prelabel(self, model_path, min_conf, max_conf, image_dir, output_dir=Path.cwd()):
+        """
+        Args:
+            model_path (str | Path): Path to the model file
+            min_conf (float): minimum confidence threshold
+            max_conf (float): maximum confidence threshold
+            image_dir (str | Path): path to data to prelabel
+        """
+        prelabeler = Prelabeler(
+            model_path=model_path,
+            min_conf=min_conf,
+            max_conf=max_conf,
+            image_dir=image_dir,
+            output_dir=output_dir
+        )
+
+        if self.current_proj_dir is not None:
+            prelabeler.output_dir = Path(self.current_proj_dir) / "prelabels"
+
+        prelabeler.seg_predict()
+
+
 
     def studio_launch(self, api_key, ls_path) -> None:
         """
@@ -97,25 +163,3 @@ class AutoTrainer:
         """
 
         self.label_studio_manager = LabelStudioManager(api_key=api_key, data_dir=self.data_dir, ls_path=ls_path)
-
-        
-
-    def load_labels_mapping(self):
-        """
-        Loads the label mapping from the data.yaml file in the current project directory
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-
-        with open(Path(self.project_manager.current_proj) / "data.yaml", "r") as f:
-            data = yaml.safe_load(f)
-
-        labels_mapping = {
-            i: name
-            for i, name in enumerate(data["names"])
-        }
-        return labels_mapping

@@ -3,9 +3,6 @@ from dotenv import load_dotenv
 from pathlib import Path
 from ultralytics import YOLO
 from auto_trainer import AutoTrainer
-import torch
-
-
 
 import os
 
@@ -35,7 +32,7 @@ def autotrain():
         data_dir=r"C:\yolo\yolo26_v2.1_seg_234\dat\images",
     )
 
-    #STEP 1 - SETUP PROJECT
+    # #STEP 1 - SETUP PROJECT
     auto_trainer.setup_project(
         label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json",
         label_config=LABEL_CONFIG
@@ -44,9 +41,17 @@ def autotrain():
     # STEP 2 - TRAIN MODEL
     auto_trainer.default_train()
 
-    #auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
-    
+    # STEP 3 - PRELABEL
+    #auto_trainer.current_proj_dir = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234"
+    auto_trainer.default_prelabel(
+        model_path=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\runs\train\weights\best.pt",
+        min_conf=0.0,
+        max_conf=1.0,
+        image_dir=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\original_data\images",
+        )
 
+
+    #auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
 
 def prelabel():
     prelabeler = Prelabeler(

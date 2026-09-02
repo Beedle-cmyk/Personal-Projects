@@ -1,4 +1,6 @@
 images/
+models/
+*.pt
 
 seg_predictions.json
 box_predictions.json

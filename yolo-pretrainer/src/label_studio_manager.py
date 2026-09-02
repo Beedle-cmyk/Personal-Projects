@@ -9,6 +9,7 @@ import subprocess
 import json
 import os
 import time
+import yaml
 
 class LabelStudioManager:
     """Class containing utilities for interfacing with label studio
@@ -305,3 +306,24 @@ class LabelStudioManager:
             ]
         except ValueError:
             raise ValueError(f"Class name '{class_name}' not found in LABELS_MAPPING")
+
+
+    def load_labels_mapping(current_proj : str | Path) -> dict:
+        """
+        Loads the label mapping from the data.yaml file in the current project directory
+
+        Args:
+            current_proj (str | Path) : path to current working project directory
+
+        Returns:
+            label mapping dictionary
+        """
+
+        with open(Path(current_proj) / "data.yaml", "r") as f:
+            data = yaml.safe_load(f)
+
+        labels_mapping = {
+            i: name
+            for i, name in enumerate(data["names"])
+        }
+        return labels_mapping

@@ -184,6 +184,7 @@ names: ["Class1", "Class2", "Class3"]"""
             file.write(latest_data_yaml)
 
         (working_dir / "runs").mkdir()
+        (working_dir / "prelabels").mkdir()
         
         cfg_dir = working_dir / "cfg"
         cfg_dir.mkdir()  # Create cfg directory for default_args.yaml
@@ -235,7 +236,7 @@ names: ["Class1", "Class2", "Class3"]"""
         if current_proj is None or not current_proj.is_dir():
             raise ValueError("Invalid project directory")
 
-        count = sum(1 for file in current_proj.rglob("*") if file.is_file() and file.suffix.lower() in self.SUPPORTED_IMG_EXTENSIONS)
+        count = sum(1 for file in (current_proj).rglob("*") if file.is_file() and file.suffix.lower() in self.SUPPORTED_IMG_EXTENSIONS)
 
         self.data_num = count
         return count
