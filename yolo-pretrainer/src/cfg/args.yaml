@@ -1,4 +1,4 @@
-# The DEFAULT configuration for training a YOLOv8 model on a custom dataset. 
+# The DEFAULT configuration for training a YOLO26 segment model on a custom dataset. 
 # This file is used by the `trainer.py` script to set various training parameters.
 task: segment
 mode: train

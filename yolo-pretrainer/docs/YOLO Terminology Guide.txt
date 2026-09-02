@@ -1,0 +1,186 @@
+args: imgsz, epochs, batch
+
+
+imgsz : 
+The model scales the training images to this size e.g. imgsz = 640 will scale to 640x640
+Greater image size results in more details being scanned by model so greater accuracy
+However slower inference time, greater latency, lower FPS and longer training times
+
+epochs :
+The amount of passes the models makes through the entire dataset
+The model adjusts its weightings through each pass resulting in higher accuracy
+However more complex models with too many passes can result in overfitting due to the model memorizing details
+e.g. if debris is often positioned in the top left corner model will think top left corner = debris or
+if scratch pictures are only under a certain brightness, it will assume that brightness means scratches
+Also there reaches a point where no/diminishing returns are reached
+So the general rule is larger dataset = fewer Epochs and vice-versa smaller set=more epochs
+E.G. LLMs use 1-3 epochs generally (Pretty cool right)
+
+batch :
+Represents the number of images the model runs through before adjusting its weights.
+	
+	
+	Epoch n:   Adjust weightings by marching through each image in batches
+			   Calculate model confidence
+         
+		  COMPLETE
+			 
+		  Test on Validation step
+			 1) pool all detections and sort by confidence from low to high
+			 2) Sweep through the detections at different confidence levels (like a slider) e.g. confidence >= 0.1
+			 3) Tally False Positives, True Positives, False Negatives via IOU threshold e.g. >= 0.5 FOR THAT confidence threshold
+			 4) Calculate Recall and Precision e.g. (R, P) = (0.8, 0.2)
+			 5) Proceed to next confidence threshold e.g. confidence >= 0.2 and repeat
+			 6) Plot points and construct graph for Precision-Recall, Precision-confidence, Recall-confidence, F1 Confidence
+			 NOTE: So typically the BoxPR_curve.png generated is for the final epoch or best epoch only so e.g. Epoch 100 
+			 
+
+Precision =  True Positives / (True Positives + False Positives)
+- Did the model evaluate the detection correctly e.g. was a dog identified as a cat (false positive)
+
+Recall = True Positives / (True Positives + False Negatives)
+- Did the model detect the anomaly correctly e.g. a cat was missed or detected as background (false negative)
+
+IoU = Intersection / Union
+- Intersection over Union is the threshold for which a detection qualifies as a TP, FP, FN
+- Two boxes that overlap: Box 1: Model prediction for anomaly, Box 2: Actual anomaly location from validation set
+- e.g. if IoU >= 0.5 (atleast 50% of the boxes overlap), and the IoU for that specific detection is 0.68 then it is a True Positive
+- If it is 0.38 (below 0.5) it is a False Positive, if not detected at all then a False Negative.
+
+-----------------------
+Precision-Recall Graph
+-----------------------
+What can we infer from it?
+-Many stops/points on curve means a lot of data for that specific class/anomaly 
+so vice versa too few stops (too box-like) means not a lot of instances of that anomaly
+-Having the curves being more towards the top right is ideal so that the precision-recall values are higher
+since they have an inverse relationship given that    -   less dections means less false positives (less anomalies flagged incorrectly) so higher precision, 
+more detections means less anomalies missed (if you flag everything - even if incorrect - you've essenitally missed nothing) so higher recall
+
+mean Average Precision
+- The area below the curve for a specific class on the Precision-Recall graph represents its Average Precision. 
+So taking the mean of all the classes Average Precision gives the mAP (mean Average Precision)
+This is great for getting a good estimate of how the model performs in general (Given Recall and Precision)
+
+-mAP50 
+means the mean average precision at IoU 50 so atleast 50% box overlap.
+It mainly checks if the model simply found the object and identified it correctly across all confidence thresholds
+
+mAP50-95 
+-Takes the mAP at 10 different thresholds and averages it. 0.5, 0.55, 0.60, ..., 0.95
+high mAP50-95 means:
+Detects most objects
+Correctly classifies them
+Produces few false positives
+Draws bounding boxes that closely match the ground truth
+Maintains good performance even under very strict IoU requirements
+
+A high mAP50 but a significantly lower mAP50-95 indicates your model finds objects well, but struggles to draw tightly precise boundaries around them
+
+----------------------
+F1-Confidence Curve
+----------------------
+F1 = 2 * (Precision * Recall) / (Precision + Recall)
+- A unit representing a balance of Recall and Precision
+A high F1 score indicates that you are both detecting most anomalies and detecting those anomalies coorectly
+- Using the graph you can find the most optimal confidence for results
+
+AP (Average Precision) evaluates the overall quality of the detector across all confidence thresholds.
+F1 is measured for one confidence threshold
+F1 helps choose a single confidence threshold to use in practice.
+
+F1 = "What's the best balance of precision and recall I can achieve?"
+mAP50 = "How good is the detector overall regardless of threshold?"
+
+------------------
+Confusion Matrix
+------------------
+Self-explanatory just statistics on what the model detected the anomaly as. e.g. Howmany scratches were detected as debris
+Normalized just sets it as a percentage of the amount of labels so 0.3 (30%) of scracthes were detected as debris, etc.
+
+--------------------------
+Precision(B) and Recall(B)
+--------------------------
+Takes the confidence and evaluates the highest F1 score for the recall, precision pair
+Takes the highest F1 value and uses the corresponding Precision and Recall values for plotting
+
+Confidence = 0.01 → P=0.40, R=0.95, F1=0.56
+Confidence = 0.10 → P=0.60, R=0.90, F1=0.72
+Confidence = 0.30 → P=0.80, R=0.85, F1=0.82  ← best F1
+Confidence = 0.50 → P=0.90, R=0.70, F1=0.79
+Confidence = 0.80 → P=0.98, R=0.40, F1=0.57
+
+Uses Precision(B)=0.80 and Recall(B)=0.85 for that specific Epoch when plotting
+
+---------------------
+       Loss
+---------------------
+
+cls_loss "Did I correctly identify what this object is?"
+box_loss "Did I tightly frame the object in the right spot?"
+dfl_loss "How confident am I about the exact edges of the box?"
+
+params
+-typically the yolo website has params that show the number of learnable weights and biases 
+ in the neural network
+ e.g. 2 M = 2 million parameters
+ fewer means a smaller model with faster inference but less memory
+ more means a larger model, more accutate but slower
+ 
+FLOPS
+-number of computations model performs. So higher resolution, better model = more FLOPS 
+floating Point Operations. 
+
+
+---------------------
+	Fine Tuning
+---------------------
+
+Fine tuning is where you adapt a pre-trained model to a specific dataset/task
+e.g. training a model on the COCO data set then using that to train a more specialized detection model
+
+
+----------------------------
+Hyperparameter Fine-tuning
+----------------------------
+This is where you optimize parameters for your specific model.
+There exists a yolo class called Tune to auto optimize your dynamic params -
+which are the parameters in your default search space (the ones the optimizer actually optimizes) LIKE lr0,lrf, augmentation, etc...
+
+The fixed parameters are your epochs, batch size and image size
+
+The tuner class uses an algorithm known as a genetic algorithm that entails essenitally "mutating" the param configuration
+based on whats known as a fitness score. The fitness score is comprised of your mAP50, mAP50-95, Precision, Recall and F1-score
+
+There exists an external Ray Tune Framework for specific optimization like e.g. I want to hyperfocus on segmentation mAP instead of the combined fitness
+This is activated by setting the parameter use_ray=True in model.tune()
+
+params: iterations
+-is the number of trials to evaluate where a trial is one training run
+-so if you set your epochs to 100, and iterations=300 it means 300 - 100 epoch runs 
+-use_ray=True you can have multiple trials run simultaneously if you want
+-Choose it based on computing power available, time constraints and generally start at 50-300 (I use 300)
+
+Ideally you determine batch size, epochs and imgsz first before running it
+
+Train baseline
+      ↓
+Tune hyperparameters
+      ↓
+Get best hyperparameters
+      ↓
+Final full training run
+
+------------------------
+K Fold Cross Validation
+-----------------------
+
+Splitting the dataset into K equally sized subsets called Folds
+e.g. Let S ={1, 2, 3, 4, 5, 6, 7, 8}  where |S| = 8
+1 - Shuffle and split
+S = {2, 8, 1, 4, 3, 6, 5, 7}
+
+dividing into 4 equally sized subsets: {2,8}, {1,4}, {3, 6}, {5, 7}
+Validation set 1 is {5,7} and K - 1 sets (the other sets) are Training sets 
+For each subset (each one becomes the validation set at some point) perform 
+train 1 -> train 2 -> ... -> train 4 and average the performance metric e.g. (mAP or recall ..etc)

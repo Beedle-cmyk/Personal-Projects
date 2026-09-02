@@ -24,6 +24,7 @@ class AutoTrainer:
         ):
         # Primitive Attributes
         self.data_dir = data_dir
+        self.current_proj_dir = None
         self.model = None
 
         # Object Attributes
@@ -47,6 +48,7 @@ class AutoTrainer:
         """
 
         self.project_manager.create_project(data_dir=self.data_dir, label_config=label_config)
+        self.current_proj_dir = self.project_manager.current_proj
 
         if label_json:
             original_data = Path(self.project_manager.current_proj) / "original_data"
@@ -57,18 +59,28 @@ class AutoTrainer:
 
         
 
-    def default_train(self, args_yaml="args.yaml"):
+    def default_train(self, current_proj_dir=None, args_yaml=None):
         """
         Default training method that creates a new project and trains the model with the provided args.yaml file
 
         Args:
-            args_yaml (str): Path to the args.yaml file containing training parameters
-            studio_label_file (str | Path): Optional path to the Label Studio labels exported json file (default is None)
+            current_proj_dir (str | Path): current project directory
+            args_yaml (str | Path): optional path to the args.yaml file containing training parameters
         
         Returns:
             None
         """
-        self.model = self.trainer.train(cfg=args_yaml) 
+        if current_proj_dir is None:
+            if self.current_proj_dir is None:
+                raise ValueError("No Valid Project Directory provided")
+            current_proj_dir = self.current_proj_dir
+        else:
+            self.current_proj_dir = current_proj_dir
+        
+        if args_yaml is None:
+            args_yaml = Path(self.current_proj_dir) / "cfg/args.yaml"
+
+        self.model = self.trainer.train(cfg=args_yaml, current_project_dir=current_proj_dir) 
 
 
 

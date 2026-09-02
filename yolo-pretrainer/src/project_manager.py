@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 
 import os
 import shutil
+import yaml
 
 class ProjectManager:
     """Class for creating and managing YOLO projects under my custom defined
@@ -38,8 +39,8 @@ Version:
 -"""
 
     DATA_YAML_TEMPLATE = """path:
-train: train\images
-val: val\images
+train: train\\images
+val: val\\images
 
 nc: 3
 
@@ -65,7 +66,6 @@ names: ["Class1", "Class2", "Class3"]"""
         Returns:
             None
         """
-        
         self.project_dir = Path(project_dir)
         self.current_proj = None
         self.data_num = 0
@@ -161,7 +161,7 @@ names: ["Class1", "Class2", "Class3"]"""
         yaml_lines = latest_data_yaml.splitlines()
         for i, line in enumerate(yaml_lines):
             if line.strip().startswith("path:"):
-                yaml_lines[i] = f"path: {working_dir}\data"
+                yaml_lines[i] = f"path: {working_dir}\\data"
                 break
         latest_data_yaml = "\n".join(yaml_lines)
 
@@ -183,6 +183,19 @@ names: ["Class1", "Class2", "Class3"]"""
         with open(working_dir / "data.yaml", "w") as file:
             file.write(latest_data_yaml)
 
+        (working_dir / "runs").mkdir()
+        
+        cfg_dir = working_dir / "cfg"
+        cfg_dir.mkdir()  # Create cfg directory for default_args.yaml
+
+        shutil.copy(r"src/cfg/args.yaml", cfg_dir)
+        cfg_file = Path(cfg_dir) / "args.yaml"
+        with open(cfg_file, "r") as f:
+            data = yaml.safe_load(f)
+
+        data["data"] = str(working_dir / data["data"])  # adding path to the data : Path/data.yaml
+        with open(cfg_file, "w") as f:
+            yaml.safe_dump(data, f, sort_keys=False)
 
         original_data_dir = working_dir / "original_data"
         original_data_dir.mkdir()  # Create the original_data directory

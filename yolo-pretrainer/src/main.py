@@ -3,51 +3,49 @@ from dotenv import load_dotenv
 from pathlib import Path
 from ultralytics import YOLO
 from auto_trainer import AutoTrainer
+import torch
+
+
 
 import os
 
-MODEL_PATH = r"C:\Personal-Projects\yolo-pretrainer\models\YOLO\best.pt"
+PROJECT_DIRECTORY = r"C:\Personal-Projects\yolo-pretrainer\projects"
 IMG_DIR = r"C:\Personal-Projects\yolo-pretrainer\data\images"
 OUTPUT_DIR = r"C:\Personal-Projects\yolo-pretrainer\data\outputs"
+MODEL_PATH = r"C:\Personal-Projects\yolo-pretrainer\models\YOLO\best.pt"
 
 MIN_CONF = 0.0
 MAX_CONF = 1.0
 
 load_dotenv()
-api_key = os.environ["API_KEY"]
-ls_path = os.environ["LABEL_STUDIO_PATH"]
-label_config = Path(r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml").read_text(encoding="utf-8")
+# Label studio variables
+API_KEY = os.environ["API_KEY"]
+LABEL_STUDIO_EXE = os.environ["LABEL_STUDIO_PATH"]
+LABEL_CONFIG = r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml"
+LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
+
 
 def main():
     autotrain()
 
-
 def autotrain():
 
     auto_trainer = AutoTrainer(
-        proj_dir=r"C:\Personal-Projects\yolo-pretrainer\projects",
+        proj_dir=PROJECT_DIRECTORY,
         data_dir=r"C:\yolo\yolo26_v2.1_seg_234\dat\images",
     )
 
+    #STEP 1 - SETUP PROJECT
     auto_trainer.setup_project(
         label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json",
-        label_config=r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml"
+        label_config=LABEL_CONFIG
     )
 
-    #auto_trainer.default_train(args_yaml="cfg/args.yaml")
+    # STEP 2 - TRAIN MODEL
+    auto_trainer.default_train()
+
     #auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
     
-
-
-
-def training():
-    model = YOLO("")
-
-
-
-def trainer():
-    pass
-
 
 
 def prelabel():
