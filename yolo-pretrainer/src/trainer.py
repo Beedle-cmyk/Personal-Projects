@@ -35,8 +35,7 @@ class Trainer:
         Returns:
             None
         """
-
-        self.model = None  # Initialize the YOLO model with a pre-trained segmentation model
+        self.model = None
 
 
     def train(self, cfg="args.yaml"):
@@ -58,13 +57,20 @@ class Trainer:
         self.model.tune(cfg=cfg, save_dir="best_hyperparameters.yaml")
 
 
+
     def stratified_split(self, data_dir, data_yaml="data.yaml", train_pct=0.8, output_dir=None):
         """
         Performs a stratified split of the dataset into training and validation sets based on the provided percentage
+        Uses MultilabelStratifiedShuffleSplit instead of the scikit-learn standard stratified splits to preserve the
+        distribution of labels across both validation and training sets. It is useful for an imabalanced dataset.
+        Scikitlearn standard stratified spit only uses one array to represent the class count
+
+        Note: This is better for a smaller more constrained data set. Completely random splits are better for larger,
+              more balanced datasets.
 
         Args:
             data_dir (str): Path to the directory containing the dataset
-            yaml (str): Path to the YOLO data.yaml file
+            yaml (str): Path to the YOLO data.yaml file (default is "data.yaml")
             train_pct (float): Percentage of data to be used for training (default is 0.8)
         
         Raises:
@@ -106,20 +112,22 @@ class Trainer:
         train_lbl_path = cwd / "data" / "train" / "labels"
         val_img_path = cwd / "data" / "val" / "images"
         val_lbl_path = cwd / "data" / "val" / "labels"
-        for folder in [train_img_path, train_lbl_path, val_img_path, val_lbl_path]:
-            folder.mkdir(parents=True, exist_ok=True)  # Create output folders if they don't exist
 
-        # Building Mutilabel Matrix for 
+        for folder in [train_img_path, train_lbl_path, val_img_path, val_lbl_path]:
+            folder.mkdir(parents=True, exist_ok=True)  # Create the folders if they don't exist
+
+        # Building Mutilabel Indicator Matrix e.g. shown below
         image_ids = []
         label_vectors = []
+
         label_files = list(input_label_path.glob("*.txt"))
         print(f"\nFound {len(label_files)} label files")
 
         for txt_file in label_files:
-            # set so duplicates are stored uniquely
+            # using a set so duplicates are stored uniquely
             classes_present = set()
 
-            # Class example stored like e.g.
+            # Class example stored like for line 1 e.g.
             # 2 0.604 0.54 0.592 0.54 0.588 0.544 0.584 where 2 is the id
             with open(txt_file, "r") as f:
                 for line in f:
@@ -138,17 +146,21 @@ class Trainer:
             for cls in classes_present:
                 multi_hot[cls] = 1
 
+            # image_ids = ["img1", "img2", "img3"]
+            # multi_hot = [0, 1, 0, 1]  4 classes, class 1 and 3 are present
+            # label_vectors = [ [0,1,0,1] for img1, [blah, blah, blah, blah] for img2, etc...]
             image_ids.append(txt_file.stem)
             label_vectors.append(multi_hot)
 
-        # Splitting the dataset using the lib
+        # Splitting the dataset using the ml_stratifiers lib
         label_vectors = np.array(label_vectors)
-        msss = ml_stratifiers.MultilabelStratifiedShuffleSplit(n_splits=1, test_size=(1 - train_pct), random_state=42)
-        train_idx, val_idx = next(msss.split(image_ids, label_vectors))
+        # For k fold cross validation recommend looking into n_splits > 1 (but for a larger dataset)
+        # random state=43 (could be any number) such that each run is identically split for debugging
+        msss = ml_stratifiers.MultilabelStratifiedShuffleSplit(n_splits=1, test_size=(1 - train_pct), random_state=42) 
+        (train_idx, val_idx) = next(msss.split(image_ids, label_vectors))
 
         train_images = [image_ids[i] for i in train_idx]
         val_images = [image_ids[i] for i in val_idx]
-
         print(f"\nTrain Images: {len(train_images)}")
         print(f"Validation Images: {len(val_images)}")
 
@@ -189,7 +201,6 @@ class Trainer:
             shutil.copy2(image_file, val_img_path / image_file.name)
             shutil.copy2(label_file, val_lbl_path / label_file.name)
         print("\nDataset split complete.")
-
         
         # Generate Statistics
         train_counter = Trainer.count_yolo_labels(train_lbl_path)
@@ -207,9 +218,20 @@ class Trainer:
         print("  val_distribution.png")
 
 
-    def count_yolo_labels(labels_dir):
+
+    def count_yolo_labels(labels_dir : str | Path) -> Counter:
         """
-        Count object instances from YOLO label files
+        Count object instances from YOLO label files. 
+        Intended to be used with stratified_split as it counts class image presence via a set e.g. class 0 or 1 it appears in image50, 
+        but not the raw count of classes e.g. class 0 appears 20 times in image50
+
+        Note: raw count balances can be messy, class image presence distribution is cleaner
+
+        Args:
+            labels_dir (str | Path): path to labels directory
+
+        Returns:
+            counter  
         """
         counter = Counter()
         txt_files = list(Path(labels_dir).rglob("*.txt"))
@@ -227,9 +249,20 @@ class Trainer:
                         continue
         return counter
 
-    
-    def print_distribution(counter, class_names, split_name):
 
+
+    def print_distribution(counter : Counter, class_names : list[str], split_name : str) -> None:
+        """
+        Helper method of stratified_split used to print the raw class distribution
+        
+        Args:
+            counter (Counter) : count distribution of class/labels
+            class_names (list[str]) : list of str class names
+            split_name (str) : name of the corresponding split; usually "TEST" or "VAL"
+        
+        Returns:
+            None
+        """
         total = sum(counter.values())
 
         print(f"\n{'=' * 50}")
@@ -253,19 +286,22 @@ class Trainer:
             )
 
 
-    def plot_distribution(counter, class_names, title, output_file):
+    def plot_distribution(counter : Counter, class_names : list[str], title : str, output_file : str | Path):
+        """
+        Generates a bar graph distribution of classes/labels. Helper Method used for stratified split
+
+        Args:
+            counter (Counter) : count distribution of class/labels
+            class_names (list[str]) : list of str class names
+            title (str) : graph title
+            output_file (str | Path) : output directory + file name
+
+        """
         class_ids = sorted(counter.keys())
         counts = [counter[cid] for cid in class_ids]
-
-        labels = [
-            class_names[cid]
-            if cid < len(class_names)
-            else f"Class {cid}"
-            for cid in class_ids
-        ]
+        labels = [class_names[cid] if cid < len(class_names) else f"Class {cid}" for cid in class_ids]
 
         plt.figure(figsize=(12, 6))
-
         bars = plt.bar(labels, counts)
 
         plt.title(title)
