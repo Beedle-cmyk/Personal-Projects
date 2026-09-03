@@ -47,7 +47,7 @@ class LabelStudioManager:
 
         if launch:
             self.launch()
-            time.sleep(10)  # Wait for Label Studio to start
+            time.sleep(15)  # Wait for Label Studio to start
 
         self.client = LabelStudio(base_url=self.LABEL_STUDIO_URL, api_key=api_key)
         me = self.client.users.whoami()

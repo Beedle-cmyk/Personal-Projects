@@ -1,0 +1,8 @@
+# The DEFAULT Tune configuration for training a YOLO26 segment model on a custom dataset. 
+# This file is used by the `trainer.py` script to set various training parameters.
+model: yolo26s-seg.pt
+data: data.yaml
+epochs: 30
+batch: 16
+imgsz: 640
+iterations: 50

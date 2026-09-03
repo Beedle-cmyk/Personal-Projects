@@ -165,6 +165,11 @@ names: ["Class1", "Class2", "Class3"]"""
                 break
         latest_data_yaml = "\n".join(yaml_lines)
 
+        cfg_dir = working_dir / "cfg"
+        cfg_dir.mkdir()  # Create cfg directory for args.yaml
+        ProjectManager._update_yaml_path(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/args.yaml"))
+        ProjectManager._update_yaml_path(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/tune_args.yaml"))
+
         # Checking if a label config is provided, if so then update the data.yaml with the labels and number of classes
         if label_config is not None:
             labels = ProjectManager.get_labels_from_config(label_config)
@@ -185,18 +190,6 @@ names: ["Class1", "Class2", "Class3"]"""
 
         (working_dir / "runs").mkdir()
         (working_dir / "prelabels").mkdir()
-        
-        cfg_dir = working_dir / "cfg"
-        cfg_dir.mkdir()  # Create cfg directory for default_args.yaml
-
-        shutil.copy(r"src/cfg/args.yaml", cfg_dir)
-        cfg_file = Path(cfg_dir) / "args.yaml"
-        with open(cfg_file, "r") as f:
-            data = yaml.safe_load(f)
-
-        data["data"] = str(working_dir / data["data"])  # adding path to the data : Path/data.yaml
-        with open(cfg_file, "w") as f:
-            yaml.safe_dump(data, f, sort_keys=False)
 
         original_data_dir = working_dir / "original_data"
         original_data_dir.mkdir()  # Create the original_data directory
@@ -277,3 +270,16 @@ names: ["Class1", "Class2", "Class3"]"""
         labels = [label.get("value") for label in root.iter("Label")]
 
         return labels
+
+
+
+    def _update_yaml_path(cfg_dir : Path, yaml_path : Path, working_dir : Path) -> None:
+
+        shutil.copy(yaml_path, cfg_dir)
+        cfg_file = Path(cfg_dir) / yaml_path.name
+        with open(cfg_file, "r") as f:
+            data = yaml.safe_load(f)
+
+        data["data"] = str(working_dir / data["data"])  # adding path to the data : Path/data.yaml
+        with open(cfg_file, "w") as f:
+            yaml.safe_dump(data, f, sort_keys=False)

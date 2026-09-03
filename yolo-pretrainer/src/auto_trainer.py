@@ -5,7 +5,6 @@ from prelabeler import Prelabeler
 from label_studio_manager import LabelStudioManager
 from pathlib import Path
 
-import yaml
 import os
 
 class AutoTrainer:
@@ -23,10 +22,13 @@ class AutoTrainer:
         self.data_dir = data_dir
         self.current_proj_dir = None
         self.model = None
+        self._studio_running = False
 
         # Object Attributes
         self.project_manager = ProjectManager(proj_dir)
         self.trainer = Trainer()
+        self._studio_thread = None
+        self._label_studio_manager = None
         #self.evaluator = Evaluator(self.project_manager)
         
 
@@ -163,3 +165,5 @@ class AutoTrainer:
         """
 
         self.label_studio_manager = LabelStudioManager(api_key=api_key, data_dir=self.data_dir, ls_path=ls_path)
+        # self.proj_id = self.label_studio_manager.create_project(title=Path(self.current_proj_dir).path.name, label_config=label_config)
+        # self.label_studio_manager.import_json(self.proj_id, Path(self.current_proj_dir) / "prelabels/seg_predictions.json")

@@ -8,11 +8,7 @@ import os
 
 PROJECT_DIRECTORY = r"C:\Personal-Projects\yolo-pretrainer\projects"
 IMG_DIR = r"C:\Personal-Projects\yolo-pretrainer\data\images"
-OUTPUT_DIR = r"C:\Personal-Projects\yolo-pretrainer\data\outputs"
 MODEL_PATH = r"C:\Personal-Projects\yolo-pretrainer\models\YOLO\best.pt"
-
-MIN_CONF = 0.0
-MAX_CONF = 1.0
 
 load_dotenv()
 # Label studio variables
@@ -32,43 +28,27 @@ def autotrain():
         data_dir=r"C:\yolo\yolo26_v2.1_seg_234\dat\images",
     )
 
-    # #STEP 1 - SETUP PROJECT
+    # STEP 0 - Launch Label Studio
+    #auto_trainer.studio_launch(ls_path=LABEL_STUDIO_EXE, api_key=API_KEY)
+
+    # # #STEP 1 - SETUP PROJECT
     auto_trainer.setup_project(
         label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json",
         label_config=LABEL_CONFIG
     )
 
-    # STEP 2 - TRAIN MODEL
-    auto_trainer.default_train()
+    # # STEP 2 - TRAIN MODEL
+    # auto_trainer.default_train()
 
-    # STEP 3 - PRELABEL
-    #auto_trainer.current_proj_dir = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234"
-    auto_trainer.default_prelabel(
-        model_path=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\runs\train\weights\best.pt",
-        min_conf=0.0,
-        max_conf=1.0,
-        image_dir=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\original_data\images",
-        )
-
-
-    #auto_trainer.studio_launch(ls_path=ls_path, api_key=api_key)
-
-def prelabel():
-    prelabeler = Prelabeler(
-    MODEL_PATH,
-    MIN_CONF,
-    MAX_CONF,
-    IMG_DIR,
-    OUTPUT_DIR
-    )
-
-    prelabeler.seg_predict()
-
-    # prelabeler.seg_predict(
-    #     conf_threshold=0.5,
-    #     overlap_threshold=0.7,
-    #     check_duplicates=True
+    # # STEP 3 - PRELABEL
+    # #auto_trainer.current_proj_dir = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234"
+    # auto_trainer.default_prelabel(
+    #     model_path=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\runs\train\weights\best.pt",
+    #     min_conf=0.0,
+    #     max_conf=1.0,
+    #     image_dir=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\original_data\images",
     # )
+
 
 if __name__ == "__main__":
     main()
