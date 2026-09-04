@@ -100,6 +100,7 @@ names: ["Class1", "Class2", "Class3"]"""
         Returns:
             Path to project created                                 
         """
+        print("Starting Project Creation...")
 
         latest_findings = self.FINDINGS_TEMPLATE
         latest_data_yaml = self.DATA_YAML_TEMPLATE
@@ -167,8 +168,8 @@ names: ["Class1", "Class2", "Class3"]"""
 
         cfg_dir = working_dir / "cfg"
         cfg_dir.mkdir()  # Create cfg directory for args.yaml
-        ProjectManager._update_yaml_path(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/args.yaml"))
-        ProjectManager._update_yaml_path(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/tune_args.yaml"))
+        ProjectManager._update_cfgs(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/args.yaml"))
+        ProjectManager._update_cfgs(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/tune_args.yaml"))
 
         # Checking if a label config is provided, if so then update the data.yaml with the labels and number of classes
         if label_config is not None:
@@ -201,7 +202,9 @@ names: ["Class1", "Class2", "Class3"]"""
         data_folder.mkdir()  # Create the images directory
 
         if data_dir is not None:
+            print("Copying files, please wait...")
             shutil.copytree(data_dir, data_folder, dirs_exist_ok=True)
+            print("Files copied successfully.")
 
         print(f"{working_dir} successfully created!")
 
@@ -273,7 +276,7 @@ names: ["Class1", "Class2", "Class3"]"""
 
 
 
-    def _update_yaml_path(cfg_dir : Path, yaml_path : Path, working_dir : Path) -> None:
+    def _update_cfgs(cfg_dir : Path, yaml_path : Path, working_dir : Path) -> None:
 
         shutil.copy(yaml_path, cfg_dir)
         cfg_file = Path(cfg_dir) / yaml_path.name
@@ -282,4 +285,40 @@ names: ["Class1", "Class2", "Class3"]"""
 
         data["data"] = str(working_dir / data["data"])  # adding path to the data : Path/data.yaml
         with open(cfg_file, "w") as f:
+            yaml.safe_dump(data, f, sort_keys=False)
+
+
+
+    def update_yaml_paths(self, current_proj_dir : Path | str) -> None:
+        """
+        Updates the yaml paths to map to the current directory. This affects
+        the data.yaml, args.yaml and tune_args.yaml files respectively
+        Intended to be used if the project is renamed at any poing
+
+        Args:
+            current_proj_dir (Path | str) : current working project path
+
+        Returns:
+            None
+        """
+        data_yaml = Path(current_proj_dir) / "data.yaml"
+        args_yaml = Path(current_proj_dir) / "cfg/args.yaml"
+        tune_args_yaml = Path(current_proj_dir) / "cfg/tune_args.yaml"
+
+        with open(data_yaml, "r") as f:
+            data = yaml.safe_load(f)
+        data["path"] = str(Path(current_proj_dir) / "data")
+        with open(data_yaml, "w") as f:
+            yaml.safe_dump(data, f, sort_keys=False)
+
+        with open(args_yaml, "r") as f:
+            data = yaml.safe_load(f)
+        data["data"] = str(data_yaml)
+        with open(args_yaml, "w") as f:
+            yaml.safe_dump(data, f, sort_keys=False)
+
+        with open(tune_args_yaml, "r") as f:
+            data = yaml.safe_load(f)
+        data["data"] = str(data_yaml)
+        with open(tune_args_yaml, "w") as f:
             yaml.safe_dump(data, f, sort_keys=False)

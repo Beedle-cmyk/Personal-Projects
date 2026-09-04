@@ -6,6 +6,7 @@ from label_studio_manager import LabelStudioManager
 from pathlib import Path
 
 import os
+import yaml
 
 class AutoTrainer:
     """ Manager class where all the magic happens folks
@@ -17,18 +18,16 @@ class AutoTrainer:
         __init__:
     """
 
-    def __init__(self, proj_dir : str | Path, data_dir : str | Path,):
+    def __init__(self, proj_dir : str | Path, data_dir : str | Path, current_proj_dir : str | Path | None=None):
         # Primitive Attributes
         self.data_dir = data_dir
-        self.current_proj_dir = None
+        self.current_proj_dir = current_proj_dir
         self.model = None
         self._studio_running = False
 
         # Object Attributes
         self.project_manager = ProjectManager(proj_dir)
         self.trainer = Trainer()
-        self._studio_thread = None
-        self._label_studio_manager = None
         #self.evaluator = Evaluator(self.project_manager)
         
 
@@ -48,8 +47,7 @@ class AutoTrainer:
         self.current_proj_dir = self.project_manager.current_proj
 
         if label_json:
-            original_data = Path(self.project_manager.current_proj) / "original_data"
-            yaml_dir = Path(self.project_manager.current_proj) / "data.yaml"
+            original_data = Path(self.current_proj_dir) / "original_data"
 
             LabelStudioManager.seg_json_to_yolo(label_json, original_data / "labels", 
                                                 LabelStudioManager.load_labels_mapping(self.current_proj_dir))
@@ -58,15 +56,17 @@ class AutoTrainer:
             file_count = self.project_manager.count_data(original_data)
 
             if label_count < file_count:
-                AutoTrainer.cleanup_images(original_data / "labels", original_data / "images")
+                self.cleanup_images(original_data / "labels", original_data / "images")
+                original_data = Path(self.current_proj_dir) / "original_data"  #updated names for resize
+                yaml_dir = Path(self.current_proj_dir) / "data.yaml"
             elif label_count > file_count:
                 raise ValueError(f"WARNING: More Labels than Image files. Please Check {original_data}")
 
-            self.trainer.stratified_split(data_dir=original_data, data_yaml=yaml_dir, output_dir=self.project_manager.current_proj)
+            self.trainer.stratified_split(data_dir=original_data, data_yaml=yaml_dir, output_dir=self.current_proj_dir)
 
 
 
-    def cleanup_images(labels_dir : (str | Path), images_dir : (str | Path)) -> None:
+    def cleanup_images(self, labels_dir : (str | Path), images_dir : (str | Path)) -> None:
         """
         Helper Method for providing cleaning up data such that the label/class count matches the data count
 
@@ -89,10 +89,12 @@ class AutoTrainer:
         }
 
         deleted = 0
+        total = 0
 
         for image_file in os.listdir(images_dir):
             if image_file.lower().endswith((".png", ".jpg", ".jpeg")):
                 image_name = normalize(os.path.splitext(image_file)[0])
+                total +=1
 
                 if image_name not in label_names:
                     image_path = os.path.join(images_dir, image_file)
@@ -100,17 +102,29 @@ class AutoTrainer:
                     print("Deleted:", image_file)
                     deleted += 1
 
+        remaining = total - deleted
+
+        dataset_dir = Path(images_dir).parent.parent
+        parts = str(dataset_dir.name).split("_")
+        parts[-1] = str(remaining)
+        rejoined = "_".join(parts)
+
+        self.current_proj_dir = dataset_dir.rename(dataset_dir.parent / rejoined)
+
+        self.project_manager.update_yaml_paths(self.current_proj_dir)
         print(f"Done. Deleted {deleted} images.")
 
                 
 
-    def default_train(self, current_proj_dir=None, args_yaml=None):
+    def run(self, current_proj_dir: str | Path | None=None, args_yaml : str | Path | None=None, tune : bool=False):
         """
         Default training method that creates a new project and trains the model with the provided args.yaml file
+        Tuner is implemented if set to true will begin/resume the tuning process
 
         Args:
             current_proj_dir (str | Path): current project directory
             args_yaml (str | Path): optional path to the args.yaml file containing training parameters
+            tune (bool) : if true will begin or resume hyperparameter tuning
         
         Returns:
             None
@@ -123,19 +137,23 @@ class AutoTrainer:
             self.current_proj_dir = current_proj_dir
         
         if args_yaml is None:
-            args_yaml = Path(self.current_proj_dir) / "cfg/args.yaml"
+            args_yaml = Path(self.current_proj_dir) / "cfg/tune_args.yaml" if tune else Path(self.current_proj_dir) / "cfg/args.yaml"
 
-        self.model = self.trainer.train(cfg=args_yaml, current_project_dir=current_proj_dir) 
+        if tune:
+            self.model = self.trainer.tune(cfg=args_yaml, current_project_dir=current_proj_dir)
+
+        else:
+            self.model = self.trainer.train(cfg=args_yaml, current_project_dir=current_proj_dir)
 
 
 
     def default_prelabel(self, model_path, min_conf, max_conf, image_dir, output_dir=Path.cwd()):
         """
         Args:
-            model_path (str | Path): Path to the model file
+            model_path (str | Path): Path to the model file you would like to prelabel with (.pt file)
             min_conf (float): minimum confidence threshold
             max_conf (float): maximum confidence threshold
-            image_dir (str | Path): path to data to prelabel
+            image_dir (str | Path): path to data to prelabel (default is current directory)
         """
         prelabeler = Prelabeler(
             model_path=model_path,
@@ -164,6 +182,43 @@ class AutoTrainer:
             None
         """
 
-        self.label_studio_manager = LabelStudioManager(api_key=api_key, data_dir=self.data_dir, ls_path=ls_path)
+        self.label_studio_manager = LabelStudioManager(api_key=api_key, data_dir=self.data_dir, ls_path=ls_path, launch=False)
+        self._studio_running = True
         # self.proj_id = self.label_studio_manager.create_project(title=Path(self.current_proj_dir).path.name, label_config=label_config)
         # self.label_studio_manager.import_json(self.proj_id, Path(self.current_proj_dir) / "prelabels/seg_predictions.json")
+
+
+    def update_best_hyperparameters(self, current_proj_dir: str | Path, yaml_path: str | Path | None = None, 
+                                    args_yaml: str | Path | None=None) -> None:
+        """
+        Update args.yaml with tuned hyperparameters.
+        """
+        exclude = {"epochs", "imgsz", "batch"}
+
+        if args_yaml is None:
+            args_yaml = Path(current_proj_dir) / "cfg/args.yaml"
+
+        if yaml_path is None:
+            yaml_files = list((Path(current_proj_dir) / "runs").rglob("best_hyperparameters.yaml"))
+            if not yaml_files:
+                raise FileNotFoundError("No best_hyperparameters.yaml found.")
+            latest_yaml = max(yaml_files, key=lambda p: p.stat().st_mtime)
+            print(f"No best_hyperparameters.yaml provided. Using most recent: {latest_yaml}")
+        else:
+            latest_yaml = Path(yaml_path)
+
+        with open(latest_yaml, "r") as f:
+            best_hyp = yaml.safe_load(f)
+
+        with open(args_yaml, "r") as f:
+            args_data = yaml.safe_load(f)
+
+        for key, value in best_hyp.items():
+            if key in exclude:
+                continue
+            if key in args_data:
+                args_data[key] = value
+
+        with open(args_yaml, "w") as f:
+            yaml.safe_dump(args_data, f, sort_keys=False)
+        print(f"Updated {args_yaml} with tuned hyperparameters.")

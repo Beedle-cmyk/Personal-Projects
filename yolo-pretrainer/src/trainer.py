@@ -129,7 +129,7 @@ class Trainer:
         self.model = YOLO(model_name)
 
         name = "tune" if tune else "train"
-        self.run_name = f"{name}_{model_name}_imgsz_{imgsz}_epochs_{epochs}"
+        self.run_name = f"{name}_{Path(model_name).stem}_imgsz_{imgsz}_epochs_{epochs}"
         run_dir = project_dir / "runs" / self.run_name
 
         checkpoints = sorted(run_dir.rglob("last.pt"), reverse=True)
@@ -142,9 +142,11 @@ class Trainer:
 
                 if tune:
                     self.latest_results = self.model.tune(
-                        cfg=cfg,
-                        project=project_dir / "runs",
-                        name=self.run_name,
+                        iterations=data.get("iterations"),
+                        data=data.get("data"),
+                        epochs= epochs,
+                        imgsz=imgsz,
+                        project=project_dir / "runs" / self.run_name,
                         resume=resume
                     )
                 else:
