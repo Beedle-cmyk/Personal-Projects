@@ -6,7 +6,9 @@ export default function SupplierDetails() {
   const [supplier, setSupplier] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/suppliers/company/${encodeURIComponent(name)}`)
+    fetch(
+      `http://localhost:8000/suppliers/company/${encodeURIComponent(name)}`
+    )
       .then((res) => res.json())
       .then((data) => setSupplier(data))
       .catch((err) => console.error(err));
@@ -14,6 +16,15 @@ export default function SupplierDetails() {
 
   if (!supplier) {
     return <div>Loading...</div>;
+  }
+
+  if (supplier.error) {
+    return (
+      <div style={{ padding: '20px' }}>
+        <Link to="/">← Back to Search</Link>
+        <h2>{supplier.error}</h2>
+      </div>
+    );
   }
 
   return (

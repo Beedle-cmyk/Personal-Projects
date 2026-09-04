@@ -42,3 +42,25 @@ def get_supplier(supplier_id: int):
         return {"error": "Supplier not found"}
 
     return dict(row)
+
+from urllib.parse import unquote
+
+@app.get("/suppliers/company/{supplier_name}")
+def get_supplier_by_name(supplier_name: str):
+
+    supplier_name = unquote(supplier_name)
+
+    conn = sqlite3.connect(SUPPLIERS_DB)
+    conn.row_factory = sqlite3.Row
+
+    row = conn.execute(
+        "SELECT * FROM suppliers WHERE [Supplier Name] = ?",
+        (supplier_name,)
+    ).fetchone()
+
+    conn.close()
+
+    if row is None:
+        return {"error": "Supplier not found"}
+
+    return dict(row)
