@@ -1,27 +1,76 @@
-# Introductiom
+# Supply Search
 
-# Project Overview
+## Layout
 
-This project is a semi-Search Engine for description and key word based searching
-through a database. A webscraper is used to update the database with descriptions
+```
+backend/
+  config.py              <- edit paths here (xlsx sources + db outputs)
+  db.py                  <- sqlite helpers
+  search.py              <- "search by description" query expansion
+  main.py                <- FastAPI app (run this)
+  requirements.txt
+  scripts/
+    converter.py         <- xlsx -> sqlite, for all three sheets
+    fetch_supplier_urls.py  <- Step 1 (suppliers.xlsx URL column)
+    crawl_offerings.py      <- Step 2/3 (data.xlsx from sitemaps)
+    tag_offerings.py        <- Step 4 (data.xlsx Tags column via Claude)
+frontend/
+  src/
+    App.jsx              <- routes
+    Home.jsx              <- landing page, last-updated badge
+    SupplierInfo.jsx       <- suppliers.xlsx browser (was SupplierTable.jsx)
+    SupplierSearch.jsx     <- data.xlsx offerings search + filters
+    SupplierDetails.jsx    <- one supplier's full record
+    config.js               <- API_BASE URL
+```
 
-Frotend: React
-Backend: Python
-Datanase: SQLte
-Hosting: ???
+## One-time setup
 
-# Converting a PDF to Excel
+```
+cd backend
+pip install -r requirements.txt
+setx ANTHROPIC_API_KEY "sk-ant-..."     # or export on macOS/Linux
+```
 
-Excel has a built in feature for this
+Edit `backend/config.py` if your xlsx files or output folder differ from
+`C:\Personal-Projects\supply-search\data\`.
 
-1 - Open up Excel --> Data tab --> Select "Get Data" --> Select "From File" then "From PDF"
-2 - Click Transform Data
-3 - In the Power Query editor, you'll see the detected tables on the left.
-Go to: Home → Append Queries → Append Queries as New
-4 - Select Three or more tables.
-5 - Move all the imported PDF tables into the right-hand list.
-6 - Click OK.
-7 - Verify the columns line up correctly.
-8 - Home → Close & Load.
+## Data pipeline (run in this order, whenever source data changes)
 
-Note: I had to manually format a large chunk of the data due to poor formatting translation from the pdf
+```
+cd backend/scripts
+
+# 1. suppliers.xlsx: fill in missing URLs
+python fetch_supplier_urls.py
+python converter.py suppliers
+
+# 2. tags.xlsx -> tags.db (no generation needed, just convert)
+python converter.py tags
+
+# 3. data.xlsx: discover offerings from each supplier's sitemap
+python crawl_offerings.py
+
+# 4. data.xlsx: assign tags to each offering via Claude
+python tag_offerings.py
+python converter.py data
+```
+
+Rows the crawler couldn't classify are written with `Type = "NEEDS REVIEW"`
+in data.xlsx - filter on that column to find suppliers whose site needs a
+manual look (no sitemap, blocked robots.txt, etc).
+
+## Run the app
+
+```
+# terminal 1
+cd backend
+uvicorn main:app --reload --port 8000
+
+# terminal 2
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 - Home page links to Supplier Search (offerings,
+smart search + filters) and Supplier Info (full supplier directory).
