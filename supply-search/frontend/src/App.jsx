@@ -1,54 +1,14 @@
-import { useEffect, useState } from "react";
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SupplierTable from "./SupplierTable";
+import SupplierDetails from "./SupplierDetails";
 
-function App() {
-  const [search, setSearch] = useState("");
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
-    fetch("http://localhost:8000/suppliers").then((res) => res.json()).then((rows) => setData(rows));
-  }, []);
-
-  const filtered = data.filter((row) =>
-    Object.values(row)
-      .join(" ")
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
-
+export default function App() {
   return (
-    <div className="container">
-      <h1>Supplier Search</h1>
-
-      <input
-        type="text"
-        placeholder="Search..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="search-input"
-      />
-
-      <table>
-        <thead>
-          <tr>
-            {filtered[0] && Object.keys(filtered[0]).map((key) => (
-              <th key={key}>{key}</th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {filtered.map((row, i) => (
-            <tr key={i}>
-              {Object.values(row).map((value, j) => (
-                <td key={j}>{String(value)}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<SupplierTable />} />
+        <Route path="/supplier/:name" element={<SupplierDetails />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
