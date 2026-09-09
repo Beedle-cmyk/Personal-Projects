@@ -17,10 +17,14 @@ The AutoTrainer Class has this workflow:
 Note: You must have labelled data manually beforehand and have a currently working model
 
 Create a fresh project <--------------------------------------------
+(autotrain.setup_project)                                          |
             |                                                      |
 Evaluate best params for given model/data/use case
+(autotrain.run(tune=True))
             |                                                      |
 Train a model using newly labelled data
+(autotrain.update_best_hyperparameters)
+(autotrain.run(args_yaml="path to best_yaml"))
             |                                                      |
 Evaluate generated statistics with report
             |                                                      |
@@ -29,6 +33,11 @@ Prelabel unlabelled data with new model
 Manually review and fix newly annotated data
             |                                                      |
 Retrain until satisfied --------------------------------------------
+
+
+# First Project
+
+1. Select box or segmentation
 
 # TODO
 

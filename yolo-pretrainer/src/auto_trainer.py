@@ -18,7 +18,13 @@ class AutoTrainer:
         __init__:
     """
 
-    def __init__(self, proj_dir : str | Path, data_dir : str | Path, current_proj_dir : str | Path | None=None):
+    def __init__(self, 
+                 proj_dir : str | Path, 
+                 data_dir : str | Path, 
+                 current_proj_dir : str | Path | None=None,
+                 type : str = "seg"
+                 ):
+        
         # Primitive Attributes
         self.data_dir = data_dir
         self.current_proj_dir = current_proj_dir

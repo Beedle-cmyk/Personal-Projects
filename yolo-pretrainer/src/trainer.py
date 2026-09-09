@@ -14,8 +14,6 @@ import time
 
 class Trainer:
 
-    MAX_RETRIES = 3
-
     """ Class for training model
 
     @author: Sami Ibrahim
@@ -29,6 +27,8 @@ class Trainer:
     Methods:
         __init__:
     """
+
+    MAX_RETRIES = 3
 
     def __init__(self):
         """

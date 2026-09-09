@@ -14,7 +14,6 @@ class Prelabeler:
     TODO: 
         Inspect Studio integration
         Prediction statistics: Overlapped, Low Conf, Zero, Duplicates detected etc.
-        Save points every n mins
         RFDETR Compatability
 
     @Author: Sami Ibrahim

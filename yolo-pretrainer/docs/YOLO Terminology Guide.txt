@@ -33,6 +33,7 @@ Represents the number of images the model runs through before adjusting its weig
 			 5) Proceed to next confidence threshold e.g. confidence >= 0.2 and repeat
 			 6) Plot points and construct graph for Precision-Recall, Precision-confidence, Recall-confidence, F1 Confidence
 			 NOTE: So typically the BoxPR_curve.png generated is for the final epoch or best epoch only so e.g. Epoch 100 
+			 7) Advance to next epoch
 			 
 
 Precision =  True Positives / (True Positives + False Positives)
@@ -46,6 +47,11 @@ IoU = Intersection / Union
 - Two boxes that overlap: Box 1: Model prediction for anomaly, Box 2: Actual anomaly location from validation set
 - e.g. if IoU >= 0.5 (atleast 50% of the boxes overlap), and the IoU for that specific detection is 0.68 then it is a True Positive
 - If it is 0.38 (below 0.5) it is a False Positive, if not detected at all then a False Negative.
+
+train and metrics/val
+- Everything under the metrics/* or val/* is calculated on the validation set
+- Everything under train/* like train/box_loss are calculated for every batch e.g. (if batch size is 12 it is averaged), and compared to 
+  the training sets actual ground truth, then used to update the model weights by the optimizer
 
 -----------------------
 Precision-Recall Graph
@@ -73,6 +79,7 @@ Detects most objects
 Correctly classifies them
 Produces few false positives
 Draws bounding boxes that closely match the ground truth
+- ground truth is just the "correct" or "original" labels
 Maintains good performance even under very strict IoU requirements
 
 A high mAP50 but a significantly lower mAP50-95 indicates your model finds objects well, but struggles to draw tightly precise boundaries around them
