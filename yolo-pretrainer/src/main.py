@@ -7,11 +7,12 @@ from pathlib import Path
 
 import os
 
+load_dotenv()
+
 PROJECT_DIRECTORY = r"C:\Personal-Projects\yolo-pretrainer\projects"
 IMG_DIR = r"C:\Personal-Projects\yolo-pretrainer\data\images"
 MODEL_PATH = r"C:\Personal-Projects\yolo-pretrainer\models\YOLO\best.pt"
 
-load_dotenv()
 # Label studio variables
 API_KEY = os.environ["API_KEY"]
 LABEL_STUDIO_EXE = os.environ["LABEL_STUDIO_PATH"]

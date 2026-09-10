@@ -6,5 +6,6 @@ seg_predictions.json
 box_predictions.json
 
 .env
-label_config.xml
+label_config_seg.xml
+label_config_box.xml
 projects/

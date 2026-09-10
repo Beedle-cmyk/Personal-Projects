@@ -35,6 +35,30 @@ Manually review and fix newly annotated data
 Retrain until satisfied --------------------------------------------
 
 
+# Getting Started
+
+## Label Studio Setup Guide ##
+Download Label studio using the following guide https://labelstud.io/guide/install.html#Install-using-pip 
+Make sure to edit the label-studio.bat file label studio directory path (the default is "C:\labelstudioenv\Scripts")
+
+- setting up local storage
+-- editing the bat file --
+set the LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT to one folder before the actual image folder
+e.g. if your data is in C:/projects/data/images/  set it to C:\\projects\\data  (use '\\' as label studio is sensitive)
+
+Create a project -> Open project Settings -> Cloud Storage -> Add Source Storage -> Local Files -> Add e.g.  C:\\projects\\data\\images --> Test connection -> Change import method from 'Tasks' to 'Files' 
+
+WARNING: If you are importing json labels DO NOT click 'Save & Sync' or duplicates will be created upon pressing this, just press "Save" then import your json labels and everything will work as intended. If you just want to start fresh without importing prelabels 'Save & Sync' works fine
+
+Default Labelling interface can be found in borescope-yolo-training/src/cfg/label_config.xml, just copy paste it in the label studio Labelling Interface tab and click save
+
+Using the label_studio_manager.py class requires an API key. This can be found in Account & Settings -> Personal Access Token
+You may paste this in a fresh .env file (just create one and add the)
+
+A useful feature of label studio is that if you are just importing labels. You don't have to edit the original data size.
+So if I have something like 20 image dataset, and label 5 of those images export a json. If I were to import that json file
+and the data directory is set to the location of the 20 image dataset, it will just import 5 of those images instead of having to manually filter everything yourself.
+
 # First Project
 
 1. Select box or segmentation
