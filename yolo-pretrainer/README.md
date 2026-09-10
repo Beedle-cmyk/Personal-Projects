@@ -59,9 +59,15 @@ A useful feature of label studio is that if you are just importing labels. You d
 So if I have something like 20 image dataset, and label 5 of those images export a json. If I were to import that json file
 and the data directory is set to the location of the 20 image dataset, it will just import 5 of those images instead of having to manually filter everything yourself.
 
-# First Project
+# Very First Project
+1. Setup label studio using the guide if you have not
+2. Create a new project using either the Default Label Studio GUI or API in label_studio_manager class
+3. If you chose to use the GUI, fill in label studio interface manually or copy paste from the label_config.xml
+4. Connect to local storage using the 
 
-1. Select box or segmentation
+2. After labelling is complete, if segmentation export standard json, if box export 'YOLOv8 OBB'
+3. Create a project via the project_manager.py method create_project() recommended to set the data_dir parameter to your data path
+4. 
 
 # TODO
 

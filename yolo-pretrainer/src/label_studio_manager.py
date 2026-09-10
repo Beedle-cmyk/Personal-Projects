@@ -365,7 +365,7 @@ class LabelStudioManager:
         return polygon
 
 
-    def polygon_to_yolo(points : (list[tuple(float, float)])) -> list[float]: # type: ignore
+    def polygon_to_yolo(points) -> list[float]:
         """
         Convert Label Studio polygon coordinates into YOLO segmentation format.
         Label Studio polygon annotations store points as percentages of the image dimensions, where both x and y coordinates are in the range

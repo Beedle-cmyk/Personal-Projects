@@ -16,7 +16,7 @@ MODEL_PATH = r"C:\Personal-Projects\yolo-pretrainer\models\YOLO\best.pt"
 # Label studio variables
 API_KEY = os.environ["API_KEY"]
 LABEL_STUDIO_EXE = os.environ["LABEL_STUDIO_PATH"]
-LABEL_CONFIG = r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config.xml"
+LABEL_CONFIG = r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config_seg.xml"
 LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
 
 
@@ -30,13 +30,13 @@ def autotrain():
         data_dir=IMG_DIR,
     )
 
-    auto_trainer.default_prelabel(
-        model_path=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\runs\train\weights\best.pt",
-        min_conf=0.0,
-        max_conf=1.0,
-        image_dir=IMG_DIR,
-        output_dir=Path(PROJECT_DIRECTORY) / r"yolo26_v1.0_seg_234\prelabels"
-    )
+    # auto_trainer.default_prelabel(
+    #     model_path=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234\runs\train\weights\best.pt",
+    #     min_conf=0.0,
+    #     max_conf=1.0,
+    #     image_dir=IMG_DIR,
+    #     output_dir=Path(PROJECT_DIRECTORY) / r"yolo26_v1.0_seg_234\prelabels"
+    # )
 
     #auto_trainer.update_best_hyperparameters(r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.2_seg_427")
     #auto_trainer.run(current_proj_dir=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.2_seg_427")
@@ -45,10 +45,10 @@ def autotrain():
     #auto_trainer.studio_launch(ls_path=LABEL_STUDIO_EXE, api_key=API_KEY)
 
     # # #STEP 1 - SETUP PROJECT
-    # auto_trainer.setup_project(
-    #     label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json",
-    #     label_config=LABEL_CONFIG
-    # )
+    auto_trainer.setup_project(
+        label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json",
+        label_config=LABEL_CONFIG
+    )
 
     # # STEP 2 - TRAIN MODEL
     #auto_trainer.run(current_proj_dir=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.1_seg_234",tune=False)

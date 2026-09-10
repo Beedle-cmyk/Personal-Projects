@@ -1,4 +1,6 @@
 from pathlib import Path
+from config import (CFG_DIRECTORY)
+
 import xml.etree.ElementTree as ET
 
 import os
@@ -12,17 +14,19 @@ class ProjectManager:
     @author: Sami Ibrahim
     @version: 8/20/2026
 
-    # Create project with valid directory structure
-    # Use file naming scheme and auto increment new project with said scheme
-    # Generate findings based on previous version
-
     Methods:
-        __init__: Initiates a project directory (Where projects are stored)
+        __init__: Initializes class project attributes
         create_project: creates a new project with pre-defined structure
-        update_findings: TODO Update findings with data from Evaluator class
+
+        update_findings: Updates findings.txt (INCOMPLETE) TODO Evaluator class integration
         count_data: counts the amount of data stored for a specific project
+        get_labels_from_config : Extracts labels from the LabelStudio Formatted xml configuration file for classes
+        update_yaml_paths : Updates the yaml paths to map to the current directory
+
+        _update_cfgs : Updates the yaml configuration files with the correct pathing
     """
 
+##############################################
     FINDINGS_TEMPLATE = """Best Model: 
     
 Version:
@@ -37,7 +41,9 @@ Version:
 |          Findings            |
 --------------------------------
 -"""
+################################################
 
+################################################
     DATA_YAML_TEMPLATE = """path:
 train: train\\images
 val: val\\images
@@ -45,6 +51,7 @@ val: val\\images
 nc: 3
 
 names: ["Class1", "Class2", "Class3"]"""
+################################################
 
     SUPPORTED_IMG_EXTENSIONS = {
         ".jpg", 
@@ -52,41 +59,77 @@ names: ["Class1", "Class2", "Class3"]"""
         ".png"
     }
 
-    SUPPORTED_PROJECT_TYPES = {"box", "seg"}
+    SUPPORTED_PROJECT_TYPES = {
+        "box",
+        "seg"
+    }
     
     def __init__(self, project_dir : str | Path) -> None:
         """
-        Initializes the project directory where your projects are stored
+        Initializes a path to the project directory, along with other project-related attributes
 
         Args:
-            project_dir (str | Path): Path to where projects are stored
-            data_num (int): total amount of data files for a specific project
-            current_proj (str | Path): current working project 
+            project_dir (str | Path): path to where projects are stored
+            data_num (int): total number of data files for a specific project (initialized to 0)
+            current_proj (str | Path): path to current working project (initialized to None)
 
         Returns:
             None
         """
+
         self.project_dir = Path(project_dir)
         self.current_proj = None
         self.data_num = 0
-        
 
 
-    def create_project(self, name=None, data_dir=None, version=None, project_type="seg", yolo_version="yolo26", label_config=None) -> Path:
+    def create_project(self, 
+                       name : str | None = None, 
+                       data_dir : str | Path | None = None, 
+                       version : float | None = None, 
+                       project_type : str = "seg", 
+                       yolo_version : str = "yolo26", 
+                       label_config : str | None =None
+                       ) -> Path:
         """
-        Creates a new project within the project directory with my own custom
-        pre-defined structure example:
-
+        Creates a new project within the project directory with my own custom pre-defined structure 
+        Will autofill parameters if set to none or not filled so calling create_project() alone will work fine
+        Only recommendation would be filling out the data_dir
+        
+        example:
         Project Directory --- yolo26_v1.2_box_400 ----- original_data ------ images
-                                                     |                       
+                                                     |                ------ labels               
+                                                     |
+                                                     |- prelabels 
+                                                     |
+                                                     |- runs
+                                                     |
+                                                     |- cfg ------ args.yaml
+                                                     |      ------ tune_args.yaml
+                                                     |                    
                                                      |- data.yaml
                                                      |
                                                      |- findings.txt
-        
-        Note: If a custom name is entered then all other name-related parameters are auto filled
-                                                     
+
+        original_data/images : the image data from the provided data directory is stored here 
+        original_data/labels : label data is stored here (formated .txt)
+        prelabels : prelabels for labelstudio using a trained model are stored here (formated .json)
+        runs : training runs are stored in this directory 
+        cfg : base yolo argument config files stored here (format .yaml)
+        data.yaml : yaml that yolo uses to begin training
+        findings.txt : utlines the updates with that version, current best model (of all previous versions) and general findings
+
+        The naming scheme is as follows:
+
+        model_version_detection-type_dataset-size
+        model   		:  The specific model trained (e.g. yolo11, yolo7, etc)
+        version 		:  A personal revision identifier used to track the iteration or update 
+                           level of a work product (e.g., v1.0, v1.1, v1.2). It indicates progress 
+                           and changes made over time and does not refer to the underlying model or system version.
+        detection-type  :  Bounding Boxes or Semantic Segmentation ("seg" or "box") default is "seg"
+        dataset-size    :  Self-explanatory - howmany images are in the dataset
+    
         Args:
-            name (str): optionally define custom project name
+            name (str): optionally define custom project name if an auto generated name isn't desired
             data_dir (str | Path): directory/location of image data in file system
             version (float): optionally set project version
             project_type (str): define project type, defaults are "seg" or "box"
@@ -168,8 +211,8 @@ names: ["Class1", "Class2", "Class3"]"""
 
         cfg_dir = working_dir / "cfg"
         cfg_dir.mkdir()  # Create cfg directory for args.yaml
-        ProjectManager._update_cfgs(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/args.yaml"))
-        ProjectManager._update_cfgs(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=Path(r"src/cfg/tune_args.yaml"))
+        ProjectManager._update_cfgs(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=CFG_DIRECTORY / r"args.yaml")
+        ProjectManager._update_cfgs(cfg_dir=cfg_dir, working_dir=working_dir, yaml_path=CFG_DIRECTORY / r"tune_args.yaml")
 
         # Checking if a label config is provided, if so then update the data.yaml with the labels and number of classes
         if label_config is not None:
@@ -212,7 +255,6 @@ names: ["Class1", "Class2", "Class3"]"""
         return self.current_proj
 
 
-
     def count_data(self, current_proj : str | Path) -> int:
         """
         Stores and returns the total count of data images for the specified project
@@ -238,10 +280,9 @@ names: ["Class1", "Class2", "Class3"]"""
         return count
 
 
-
     def update_findings(self, findings_file : str | Path, contents : str) -> None:
         """
-        Updates the findings file with contents
+        Updates the findings.txt with contents
         TODO: will be useful for the Evaluator class when updating findings
 
         Args:
@@ -256,27 +297,38 @@ names: ["Class1", "Class2", "Class3"]"""
             file.write(contents)
 
 
-    def get_labels_from_config(label_config):
+    def get_labels_from_config(label_config : str | Path) -> list[str]:
         """
         Extracts labels from the LabelStudio Formatted xml configuration file for classes
+        Intended for use inside create_project()
 
         Args:
             label_config (Path | str) : path to xml config file
         
         Returns: 
-            None
+            string list of labels
         """
         
         tree = ET.parse(label_config)
         root = tree.getroot()
-
         labels = [label.get("value") for label in root.iter("Label")]
 
         return labels
 
 
-
     def _update_cfgs(cfg_dir : Path, yaml_path : Path, working_dir : Path) -> None:
+        """
+        Updates the yaml configuration files with the correct pathing
+        Intended use is for create_project() method
+
+        Args:
+            cfg_dir (Path) : path to configuration directory 
+            yaml_path (Path) : path to yaml file
+            working_dir: path to current working directory
+
+        Returns:
+            None
+        """
 
         shutil.copy(yaml_path, cfg_dir)
         cfg_file = Path(cfg_dir) / yaml_path.name
@@ -286,7 +338,6 @@ names: ["Class1", "Class2", "Class3"]"""
         data["data"] = str(working_dir / data["data"])  # adding path to the data : Path/data.yaml
         with open(cfg_file, "w") as f:
             yaml.safe_dump(data, f, sort_keys=False)
-
 
 
     def update_yaml_paths(self, current_proj_dir : Path | str) -> None:

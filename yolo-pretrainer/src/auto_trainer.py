@@ -55,8 +55,7 @@ class AutoTrainer:
         if label_json:
             original_data = Path(self.current_proj_dir) / "original_data"
 
-            LabelStudioManager.seg_json_to_yolo(label_json, original_data / "labels", 
-                                                LabelStudioManager.load_labels_mapping(self.current_proj_dir))
+            LabelStudioManager.seg_json_to_yolo(input_file=label_json, yolo_project=self.current_proj_dir)
 
             label_count = sum(1 for item in (original_data / "labels").iterdir() if item.is_file())
             file_count = self.project_manager.count_data(original_data)
