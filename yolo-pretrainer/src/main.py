@@ -1,23 +1,4 @@
-from prelabeler import Prelabeler
-from dotenv import load_dotenv
-from pathlib import Path
-from ultralytics import YOLO
 from auto_trainer import AutoTrainer
-from pathlib import Path
-
-import os
-
-load_dotenv()
-
-PROJECT_DIRECTORY = r"C:\Personal-Projects\yolo-pretrainer\projects"
-IMG_DIR = r"C:\Personal-Projects\yolo-pretrainer\data\images"
-MODEL_PATH = r"C:\Personal-Projects\yolo-pretrainer\models\YOLO\best.pt"
-
-# Label studio variables
-API_KEY = os.environ["API_KEY"]
-LABEL_STUDIO_EXE = os.environ["LABEL_STUDIO_PATH"]
-LABEL_CONFIG = r"C:\Personal-Projects\yolo-pretrainer\src\cfg\label_config_seg.xml"
-LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
 
 
 def main():
@@ -44,14 +25,6 @@ def autotrain():
     # STEP 0 - Launch Label Studio
     #auto_trainer.studio_launch(ls_path=LABEL_STUDIO_EXE, api_key=API_KEY)
 
-    # # #STEP 1 - SETUP PROJECT
-    auto_trainer.setup_project(
-        label_json=r"C:\yolo\yolo26_v2.1_seg_234\dat\brush.json",
-        label_config=LABEL_CONFIG
-    )
-
-    # # STEP 2 - TRAIN MODEL
-    #auto_trainer.run(current_proj_dir=r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.1_seg_234",tune=False)
 
     # # STEP 3 - PRELABEL
     # #auto_trainer.current_proj_dir = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.0_seg_234"

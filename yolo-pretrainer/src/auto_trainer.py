@@ -22,7 +22,6 @@ class AutoTrainer:
                  proj_dir : str | Path, 
                  data_dir : str | Path, 
                  current_proj_dir : str | Path | None=None,
-                 type : str = "seg"
                  ):
         
         # Primitive Attributes
@@ -67,7 +66,7 @@ class AutoTrainer:
             elif label_count > file_count:
                 raise ValueError(f"WARNING: More Labels than Image files. Please Check {original_data}")
 
-            self.trainer.stratified_split(data_dir=original_data, data_yaml=yaml_dir, output_dir=self.current_proj_dir)
+            self.trainer.stratified_split(data_dir=original_data, data_yaml=yaml_dir, current_proj_dir=self.current_proj_dir)
 
 
 
@@ -145,10 +144,10 @@ class AutoTrainer:
             args_yaml = Path(self.current_proj_dir) / "cfg/tune_args.yaml" if tune else Path(self.current_proj_dir) / "cfg/args.yaml"
 
         if tune:
-            self.model = self.trainer.tune(cfg=args_yaml, current_project_dir=current_proj_dir)
+            self.model = self.trainer.tune(cfg=args_yaml, current_proj_dir=current_proj_dir)
 
         else:
-            self.model = self.trainer.train(cfg=args_yaml, current_project_dir=current_proj_dir)
+            self.model = self.trainer.train(cfg=args_yaml, current_proj_dir=current_proj_dir)
 
 
 

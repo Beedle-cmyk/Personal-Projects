@@ -140,31 +140,35 @@ class LabelStudioManager:
                 raise ValueError("Error: No existing Project ID detected. Please enter a valid one")
             project_id = self.project_id
 
-        with open(json_path, "r", encoding="utf-8") as f:
-            tasks = json.load(f)
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                tasks = json.load(f)
+        except FileNotFoundError:
+            print("File Not Found\n")
+            print("Nothing Imported")
 
         print("Importing...\n")
         resp = self.client.projects.import_tasks(id=project_id, request=tasks)
         print(resp)
 
 
-    def connect_local_storage(self, project_id : int) -> None:
-        """
-        Establishes a local storage connection for a specific project using the data directory provided for class initialization
+    # def connect_local_storage(self, project_id : int) -> None:
+    #     """
+    #     Establishes a local storage connection for a specific project using the data directory provided for class initialization
 
-        Args :
-            project_id (int) : specified project id
+    #     Args :
+    #         project_id (int) : specified project id
 
-        Returns:
-            None
-        """
-        # storage = self.client.import_storage.local.create(
-        #     project=project_id,
-        # )
-        # sync_result = self.client.import_storage.s3.sync(import_storage.id)
-        print("Local Storage Connection Created!\n")
-        print("To import raw ")
-        pass
+    #     Returns:
+    #         None
+    #     """
+    #     # storage = self.client.import_storage.local.create(
+    #     #     project=project_id,
+    #     # )
+    #     # sync_result = self.client.import_storage.s3.sync(import_storage.id)
+    #     print("Local Storage Connection Created!\n")
+    #     print("To import raw ")
+    #     pass
 
 
     def seg_json_to_yolo(input_file : str | Path, 
