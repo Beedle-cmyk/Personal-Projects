@@ -204,7 +204,6 @@ class Trainer:
         return self.latest_results
 
 
-    @staticmethod
     def stratified_split(self, 
                          data_dir : str | Path, 
                          data_yaml : str | Path="data.yaml", 

@@ -20,7 +20,7 @@ DATA_DIRECTORY = BASE_DIRECTORY / r"data/images"
 CFG_DIRECTORY = BASE_DIRECTORY / r"src/cfg"
 
 # Provide a label studio exported json file e.g. yolo26_v2.1_seg_234.json
-LABELS_JSON_FILE = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v2.1_seg_234\labelstudio\yolo26_v2.1_seg_234.json"
+LABELS_JSON_FILE = r"FILL THIS IN!"
 
 # Create a project using setup_project.py first before setting this
 CURRENT_WORKING_PROJECT_DIRECTORY = PROJECT_DIRECTORY / r"FILL THIS IN!"  #e.g. yolo26_v1.2_seg_2808
@@ -47,13 +47,13 @@ LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
 
 
 # --------------------------------------Training Args Configs-------------------------------------------------- #
-ARGS_YAML_CONFIG = CFG_DIRECTORY / r"args.yaml"
-TUNE_ARGS_YAML_CONFIG = CFG_DIRECTORY / r"tune_args.yaml"
+ARGS_YAML_CONFIG = CURRENT_WORKING_PROJECT_DIRECTORY /  r"cfg/args.yaml"
+TUNE_ARGS_YAML_CONFIG = CURRENT_WORKING_PROJECT_DIRECTORY / r"cfg/tune_args.yaml"
 
 # Enabling this will auto write the tuner recommended parameters from 'best_hyperparameters.yaml' to the current project's 'args.yaml' in tune.py
 UPDATE_ARGS_YAML_WITH_TUNED_ONES = False
 
-# Path to model if you would like to resume training from a checkpoint e.g. 
+# Path to model if you would like to resume training from a checkpoint e.g. "project/runs/last.pt"
 RESUME_MODEL = None
 
 # trainer.py maximum amount of times training attempts to resume
