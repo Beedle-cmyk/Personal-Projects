@@ -1,12 +1,13 @@
-from project_manager import ProjectManager
-from trainer import Trainer
-from evaluator import Evaluator
-from prelabeler import Prelabeler
-from label_studio_manager import LabelStudioManager
+from src.project_manager import ProjectManager
+from src.trainer import Trainer
+from src.evaluator import Evaluator
+from src.prelabeler import Prelabeler
+from src.label_studio_manager import LabelStudioManager
 from pathlib import Path
 
 import os
 import yaml
+import shutil
 
 class AutoTrainer:
     """ Manager class where all the magic happens folks
@@ -52,6 +53,7 @@ class AutoTrainer:
         self.current_proj_dir = self.project_manager.current_proj
 
         if label_json:
+            shutil.copy(label_json, Path(self.current_proj_dir) / "labelstudio")
             original_data = Path(self.current_proj_dir) / "original_data"
 
             LabelStudioManager.seg_json_to_yolo(input_file=label_json, yolo_project=self.current_proj_dir)

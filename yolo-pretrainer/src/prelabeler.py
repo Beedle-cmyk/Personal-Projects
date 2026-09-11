@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 from pathlib import Path
-from label_studio_manager import LabelStudioManager
+from src.label_studio_manager import LabelStudioManager
 from tqdm import tqdm
 
 import json

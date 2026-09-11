@@ -1,4 +1,4 @@
-from utils import brush
+from src.utils import brush
 from label_studio_sdk import LabelStudio
 from pathlib import Path
 from urllib.parse import unquote
@@ -32,8 +32,6 @@ class LabelStudioManager:
         polygon_to_yolo: Convert Label Studio polygon coordinates into YOLO segmentation format
 
         _load_labels_mapping : creates a label mapping from a project using its data.yaml; internally used with seg_json_to_yolo
-
-    TODO: connect_local_storage: Establishes a local storage connection for a specific project
     """
 
     LABEL_STUDIO_URL = "http://localhost:8080"
@@ -150,25 +148,6 @@ class LabelStudioManager:
         print("Importing...\n")
         resp = self.client.projects.import_tasks(id=project_id, request=tasks)
         print(resp)
-
-
-    # def connect_local_storage(self, project_id : int) -> None:
-    #     """
-    #     Establishes a local storage connection for a specific project using the data directory provided for class initialization
-
-    #     Args :
-    #         project_id (int) : specified project id
-
-    #     Returns:
-    #         None
-    #     """
-    #     # storage = self.client.import_storage.local.create(
-    #     #     project=project_id,
-    #     # )
-    #     # sync_result = self.client.import_storage.s3.sync(import_storage.id)
-    #     print("Local Storage Connection Created!\n")
-    #     print("To import raw ")
-    #     pass
 
 
     def seg_json_to_yolo(input_file : str | Path, 

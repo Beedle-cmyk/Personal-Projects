@@ -1,5 +1,5 @@
 from pathlib import Path
-from config import (CFG_DIRECTORY)
+from src.config import (CFG_DIRECTORY)
 
 import xml.etree.ElementTree as ET
 
@@ -117,6 +117,7 @@ names: ["Class1", "Class2", "Class3"]"""
         cfg : base yolo argument config files stored here (format .yaml)
         data.yaml : yaml that yolo uses to begin training
         findings.txt : utlines the updates with that version, current best model (of all previous versions) and general findings
+        labelstudio : where the label studio project export goes (for those who want to import project files)
 
         The naming scheme is as follows:
 
@@ -217,23 +218,19 @@ names: ["Class1", "Class2", "Class3"]"""
         # Checking if a label config is provided, if so then update the data.yaml with the labels and number of classes
         if label_config is not None:
             labels = ProjectManager.get_labels_from_config(label_config)
-            yaml_lines = latest_data_yaml.splitlines()
+            data = yaml.safe_load(latest_data_yaml)
 
-            for i, line in enumerate(yaml_lines):
+            data["names"] = labels
+            data["nc"] = len(labels)
 
-                if line.strip().startswith("names:"):
-                    yaml_lines[i] = f"names: {labels}"
-
-                if line.strip().startswith("nc:"):
-                    yaml_lines[i] = f"nc: {len(labels)}"
-
-        latest_data_yaml = "\n".join(yaml_lines)
+            latest_data_yaml = yaml.safe_dump(data, sort_keys=False, default_flow_style=False)
 
         with open(working_dir / "data.yaml", "w") as file:
             file.write(latest_data_yaml)
 
         (working_dir / "runs").mkdir()
         (working_dir / "prelabels").mkdir()
+        (working_dir / "labelstudio").mkdir()
 
         original_data_dir = working_dir / "original_data"
         original_data_dir.mkdir()  # Create the original_data directory

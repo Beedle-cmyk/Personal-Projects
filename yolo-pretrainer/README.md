@@ -59,6 +59,9 @@ A useful feature of label studio is that if you are just importing labels. You d
 So if I have something like 20 image dataset, and label 5 of those images export a json. If I were to import that json file
 and the data directory is set to the location of the 20 image dataset, it will just import 5 of those images instead of having to manually filter everything yourself.
 
+Import an old project use the label_studio_setup_project.py script
+run python -m scripts.label_studio_setup_project
+
 # Very First Project
 1. Setup label studio using the guide if you have not
 2. Create a new project using either the Default Label Studio GUI or API in label_studio_manager class

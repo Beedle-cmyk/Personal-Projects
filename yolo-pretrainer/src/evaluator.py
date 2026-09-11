@@ -1,4 +1,4 @@
-from project_manager import ProjectManager
+from src.project_manager import ProjectManager
 
 class Evaluator:
     """Class designed for evaluation of a model 
