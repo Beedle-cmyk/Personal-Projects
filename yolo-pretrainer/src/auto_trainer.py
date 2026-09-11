@@ -10,20 +10,32 @@ import yaml
 import shutil
 
 class AutoTrainer:
-    """ Manager class where all the magic happens folks
+    """ Manager class where all class methods are combined to automate the full YOLO fine tuning pipeline
 
     @author: Sami Ibrahim
     @version: 8/21/2026
     
     Methods:
-        __init__:
+        __init__: Initializes class object and attributes
+
     """
 
     def __init__(self, 
                  proj_dir : str | Path, 
                  data_dir : str | Path, 
                  current_proj_dir : str | Path | None=None,
-                 ):
+                 ) -> None:
+        """
+        Initializes class object and attributes
+
+        Args:
+            proj_dir (str | Path): path to project directory
+            data_dir (str | Path): path to where data is stored
+            current_proj_dir (str | Path | None): path to current working project (default is None)
+
+        Returns:
+            None
+        """
         
         # Primitive Attributes
         self.data_dir = data_dir
@@ -37,13 +49,13 @@ class AutoTrainer:
         #self.evaluator = Evaluator(self.project_manager)
         
 
-    def setup_project(self, label_json=None, label_config=None):
+    def setup_project(self, label_json : str | Path | None=None, label_config : str | Path | None=None) -> None:
         """
         Sets up a new project by creating the necessary directory structure and converting Label Studio JSON labels to YOLO format if provided
 
         Args:
-            label_json (str | Path): Path to the Label Studio labels exported json file
-            label_config (str | Path): Optional path to the Label Studio label class configuration file (default is None)
+            label_json (str | Path | None): Path to the Label Studio labels exported json file (default is None)
+            label_config (str | Path | None): Optional path to the Label Studio label class configuration file (default is None)
 
         Returns:
             None
@@ -69,7 +81,6 @@ class AutoTrainer:
                 raise ValueError(f"WARNING: More Labels than Image files. Please Check {original_data}")
 
             self.trainer.stratified_split(data_dir=original_data, data_yaml=yaml_dir, current_proj_dir=self.current_proj_dir)
-
 
 
     def cleanup_images(self, labels_dir : (str | Path), images_dir : (str | Path)) -> None:
@@ -121,8 +132,7 @@ class AutoTrainer:
         print(f"Done. Deleted {deleted} images.")
 
                 
-
-    def run(self, current_proj_dir: str | Path | None=None, args_yaml : str | Path | None=None, tune : bool=False):
+    def run(self, current_proj_dir: str | Path | None=None, args_yaml : str | Path | None=None, tune : bool=False) -> None:
         """
         Default training method that creates a new project and trains the model with the provided args.yaml file
         Tuner is implemented if set to true will begin/resume the tuning process
@@ -152,14 +162,23 @@ class AutoTrainer:
             self.model = self.trainer.train(cfg=args_yaml, current_proj_dir=current_proj_dir)
 
 
-
-    def default_prelabel(self, model_path, min_conf, max_conf, image_dir, output_dir=Path.cwd()):
+    def default_prelabel(self, 
+                         model_path : str | Path, 
+                         min_conf : float, 
+                         max_conf : float, 
+                         image_dir : str | Path, 
+                         output_dir : str | Path=Path.cwd()) -> None:
         """
+        Standard prelabelling with no filter flags using the prelabeler class
+
         Args:
             model_path (str | Path): Path to the model file you would like to prelabel with (.pt file)
             min_conf (float): minimum confidence threshold
             max_conf (float): maximum confidence threshold
             image_dir (str | Path): path to data to prelabel (default is current directory)
+
+        Returns:
+            None
         """
         prelabeler = Prelabeler(
             model_path=model_path,
@@ -175,8 +194,7 @@ class AutoTrainer:
         prelabeler.seg_predict()
 
 
-
-    def studio_launch(self, api_key, ls_path) -> None:
+    def studio_launch(self, api_key : str, ls_path : str | Path) -> None:
         """
         Launches the Label Studio environment for reviewing and editing labels
 
@@ -197,7 +215,15 @@ class AutoTrainer:
     def update_best_hyperparameters(self, current_proj_dir: str | Path, yaml_path: str | Path | None = None, 
                                     args_yaml: str | Path | None=None) -> None:
         """
-        Update args.yaml with tuned hyperparameters.
+        Update the current project's args.yaml with tuned hyperparameters generated from a tune run
+
+        Args:
+            current_proj_dir (str | Path): current project directory
+            yaml_path (str | Path | None): path to best_hyperparameters.yaml
+            args_yaml (str | Path | None): optional path to the args.yaml file containing training parameters
+        
+        Returns:
+            None
         """
         exclude = {"epochs", "imgsz", "batch"}
 
