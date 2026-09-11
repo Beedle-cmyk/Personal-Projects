@@ -150,6 +150,7 @@ class LabelStudioManager:
         print(resp)
 
 
+    @staticmethod
     def seg_json_to_yolo(input_file : str | Path, 
                          yolo_project : str | Path,
                          output_dir : str | Path | None=None
@@ -234,6 +235,7 @@ class LabelStudioManager:
                 print(label)
 
 
+    @staticmethod
     def _load_labels_mapping(yolo_project : str | Path) -> dict:
         """
         Loads the label mapping from the data.yaml file in the current project 
@@ -256,6 +258,7 @@ class LabelStudioManager:
         return labels_mapping
 
 
+    @staticmethod
     def mapping_class(class_name : str, labels_mapping : dict) -> int:
         """
         Returns the corresponding number/integer ID mapping to a specified class name
@@ -275,8 +278,9 @@ class LabelStudioManager:
             ]
         except ValueError:
             raise ValueError(f"Class name '{class_name}' not found in LABELS_MAPPING")
+
         
-    
+    @staticmethod
     def ls_convert(mask : torch.Tensor, width : int, height : int, mask_threshold : float=0.5):
         """
         Converts the given mask data with the prediction height & width via Run Length Encoding (rle)
@@ -304,6 +308,7 @@ class LabelStudioManager:
         return brush.mask2rle(ls_mask)
     
 
+    @staticmethod
     def brush_to_yolo(rle : list[int], height : int, width : int) -> list[float]:
         """
         Convert a Label Studio brush annotation (Run-Length Encoded mask) into a YOLO segmentation polygon.
@@ -348,6 +353,7 @@ class LabelStudioManager:
         return polygon
 
 
+    @staticmethod
     def polygon_to_yolo(points) -> list[float]:
         """
         Convert Label Studio polygon coordinates into YOLO segmentation format.

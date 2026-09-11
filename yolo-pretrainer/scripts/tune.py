@@ -3,6 +3,8 @@ from src.config import (PROJECT_DIRECTORY, DATA_DIRECTORY, CURRENT_WORKING_PROJE
 
 """
 Begins model tuning using the current projects tune_args.yaml configuration file
+you may auto update the args.yaml with the tuned one on tune completion with setting
+UPDATE_ARGS_YAML_WITH_TUNED_ONES to True
 
 Requires:
     PROJECT_DIRECTORY

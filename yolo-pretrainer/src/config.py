@@ -39,11 +39,17 @@ LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
 # Enabling this will auto write the tuner recommended parameters from 'best_hyperparameters.yaml' to the current project's 'args.yaml'
 # This is used in tune.py
 UPDATE_ARGS_YAML_WITH_TUNED_ONES = False
-ARGS_YAML_CONFIG = CURRENT_WORKING_PROJECT_DIRECTORY / r"cfg/args.yaml"
-TUNE_ARGS_YAML_CONFIG = CURRENT_WORKING_PROJECT_DIRECTORY / r"cfg/tune_args.yaml"
+ARGS_YAML_CONFIG = CFG_DIRECTORY / r"args.yaml"
+TUNE_ARGS_YAML_CONFIG = CFG_DIRECTORY / r"tune_args.yaml"
 
 # Path to model if you would like to resume training from a checkpoint
 RESUME_MODEL = None
 
 # trainer.py maximum amount of times training attempts to resume
 MAX_RETRIES = 3
+
+# Model path e.g. to best.pt used for predictions or prelabelling
+MODEL_FOR_PREDICTIONS = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v1.1_seg_279\runs\train_yolo26s-seg_imgsz_640_epochs_100\weights\best_yolo26s-seg_imgsz_640_epochs_100.pt"
+MIN_CONF = 0.25
+MAX_CONF = 1.0
+IMAGES_TO_PREDICT = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v2.1_seg_234\original_data\images"

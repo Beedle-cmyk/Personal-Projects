@@ -3,11 +3,12 @@ from pathlib import Path
 from src.label_studio_manager import LabelStudioManager
 from tqdm import tqdm
 
+import torch
 import json
 import os
 
 class Prelabeler:
-    """Base class for prelabelling image datasets using YOLO/RFDETR models
+    """Base class for prelabelling image datasets using YOLO models
 
     Specifically designed to generate predictions in a format compatible with Label Studio.
     Tested with sequential video frame extraction and analysis
@@ -20,17 +21,17 @@ class Prelabeler:
     @Version 8-14-2026
 
     Methods:
-        __init__:
-        _initialize_model:
-        set_confidence:
-        _mask_overlap:
+        __init__: Initializes class object with attributes
+        seg_prelabel : main method of this class, stores model predictions in a json file in label studio format
+        box_prelabel : prelabels for Oriented Bounding Boxes (OBB) label studio format
+        set_confidence : allows client to simultaneously set both min and max confidence values
 
+        box_iou : computes the Intersection over Union (IoU) between two boxes
+        check_overlap : checks if two masks overlap
+        same_prediction : Checks if two frames have essentially the same detections
+
+        _initialize_model : Internal method to initialize a YOLO model
     """
-
-    SUPPORTED_MODELS = {
-        "YOLO" : "ultralytics YOLO",
-        "RFDETR" : "Roboflow RFDETR"
-    }
 
     SUPPORTED_IMG_EXTENSIONS = {
         ".jpg", 
@@ -38,8 +39,13 @@ class Prelabeler:
         ".png"
     }
 
-
-    def __init__(self, model_path, min_conf, max_conf, image_dir, output_dir="."):
+    def __init__(self, 
+                 model_path : str | Path, 
+                 min_conf : float, 
+                 max_conf : float, 
+                 image_dir : str | Path, 
+                 output_dir : str | Path="."
+                 ) -> None:
         """
         Initializes the Prelabeler with the specified model path, confidence threshold 
         and image directory.
@@ -49,6 +55,10 @@ class Prelabeler:
             min_conf (float): minimum confidence threshold
             max_conf (float): maximum confidence threshold
             image_dir (str | Path): path to image data directory
+            output_dir (str | Path): path to where output label json shall be stored
+        
+        Returns:
+            None
         """
         
         self.model = self._initialize_model(model_path)
@@ -56,14 +66,10 @@ class Prelabeler:
         self.image_dir = Path(image_dir)
         self.output_dir = Path(output_dir)
 
-        #TODO output Directory check if exists
 
-
-
-    def _initialize_model(self, model_path) -> YOLO:
+    def _initialize_model(self, model_path : Path | str) -> YOLO:
         """
         Initialize a model from the provided model path.
-
         Supports YOLO and RFDETR models.
 
         Args:
@@ -78,19 +84,16 @@ class Prelabeler:
 
         if model_path is None:
             raise ValueError("Model path is not provided. Please provide a valid model path.")
-        
-        if model_path.endswith(".pt"):
+        model_path = Path(model_path)
+                
+        if model_path.suffix == ".pt":
             print(f"Model '{model_path}' initialized successfully.")
             return YOLO(model_path)
-        
-        # elif model_path.endswith(".pth"):
-        #     self.model = RFDETR(model_path)
         else:
-            raise ValueError(f"Model is not supported. Supported models are: {list(self.SUPPORTED_MODELS.keys())}")
+            raise ValueError("Model is not supported")
         
 
-
-    def set_confidence(self, min_conf, max_conf) -> None:
+    def set_confidence(self, min_conf : float, max_conf : float) -> None:
         """
         Sets the confidence threshold (max and min confidence values)
 
@@ -113,14 +116,14 @@ class Prelabeler:
         print(f"Maximum confidence threshold set to {self.max_conf}")
 
 
-
-    def box_iou(self, box1, box2) -> float:
+    @staticmethod
+    def box_iou(box1, box2) -> float:
         """
         Computes the Intersection over Union (IoU) between two prediction boxes
 
         Args:
-            box1 : First prediction box
-            box2 : Second prediction box
+            box1 : First prediction box coordinates
+            box2 : Second prediction box coordinates
         
         Returns:
             The computed IoU between both boxes
@@ -140,8 +143,8 @@ class Prelabeler:
         return intersection / union if union > 0 else 0.0
 
 
-
-    def _mask_overlap(self, mask1, mask2) -> float:
+    @staticmethod
+    def mask_overlap(mask1, mask2) -> float:
         """
         Calculates an overlap percentage float between the two provided masks
 
@@ -149,20 +152,26 @@ class Prelabeler:
         area instead of the two masks for overlap
 
         Args:
-            mask1, mask2:
+            mask1, mask2 (Tensor): the object mask instances
+            e.g. mask1 = tensor([
+                                    [0, 0, 0, 0, 0],
+                                    [0, 1, 1, 0, 0],
+                                    [0, 1, 1, 0, 0],
+                                    [0, 0, 0, 0, 0]
+                                ])
 
         Returns:
             float representing an overlap percentage between mask1 and mask2
         """
         # Convert to bool for logical operations
-        maski1 = mask1.bool()
-        maski2 = mask2.bool()
+        mask1_bool = mask1.bool()
+        mask2_bool = mask2.bool()
 
         # Counting the intersections
-        intersection = (maski1 & maski2).sum().float()
+        intersection = (mask1_bool & mask2_bool).sum().float()
 
-        area1 = maski1.sum().float()
-        area2 = maski2.sum().float()
+        area1 = mask1_bool.sum().float()
+        area2 = mask2_bool.sum().float()
         smaller_area = min(area1, area2)
 
         if smaller_area == 0:
@@ -171,19 +180,19 @@ class Prelabeler:
         return (intersection / smaller_area).item()  # item() to convert from tensor decimal to float
 
 
-
-    def check_overlap(self, masks, boxes, overlap_threshold, iou_threshold=0.05) -> bool:
+    @staticmethod
+    def check_overlap(masks, boxes, overlap_threshold : float, iou_threshold : float=0.05) -> bool:
         """
-        Checks if there is overlap between the provided prediction image
+        Checks if there is overlap between classes/labels the provided prediction image
 
         Args:
-            masks:
-            boxes:
-            overlap_threshold:
-            iou_threshold:
+            masks (list[torch.Tensor): list of masks (tensors) to check overlap
+            boxes: list of class/label bounding box objects
+            overlap_threshold (float): minimum overlap percentage to be flagged
+            iou_threshold (float): minimum IoU threshold to justify check (saves time) 
         
         Returns:
-
+            boolean true if overlap between masks is detected, false otherwise
         """
 
         for i in range(len(masks)):
@@ -195,24 +204,24 @@ class Prelabeler:
                 if cls_i != cls_j:
                     continue 
                 
-                if self.box_iou(boxes[i].xyxy[0], boxes[j].xyxy[0]) < iou_threshold:
+                if Prelabeler.box_iou(boxes[i].xyxy[0], boxes[j].xyxy[0]) < iou_threshold:
                     continue
 
-                overlap = self._mask_overlap(masks[i], masks[j])
+                overlap = Prelabeler.mask_overlap(masks[i], masks[j])
                 if overlap >= overlap_threshold:
                     return True
         return False
 
 
-
-    def same_prediction(self, prev_boxes, curr_boxes, iou_threshold=0.90) -> bool:
+    @staticmethod
+    def same_prediction(prev_boxes, curr_boxes, iou_threshold : float=0.90) -> bool:
         """
         Checks if two frames have essentially the same detections
 
         Args:
             prev_boxes: The bounding boxes of the first image prediction
             curr_boxes: The bounding boxes of the second image prediction
-            iou_threshold: IoU threshold that must be met to classify as same detection
+            iou_threshold (float): IoU threshold that must be met to classify as same detection
 
         Returns:
             True when both boxes predictions possess the same class, label number and IoU
@@ -232,14 +241,18 @@ class Prelabeler:
             return False
 
         for prev_box, curr_box in zip(prev_boxes, curr_boxes):
-            iou = self.box_iou(prev_box.xyxy[0].tolist(), curr_box.xyxy[0].tolist())
+            iou = Prelabeler.box_iou(prev_box.xyxy[0].tolist(), curr_box.xyxy[0].tolist())
             if iou < iou_threshold:
                 return False
         return True
 
 
-
-    def seg_predict(self, conf_threshold=0.0, zero_predictions=False, overlap_threshold=0.0, check_duplicates=False) -> None:
+    def seg_predict(self, 
+                    conf_threshold : float=0.0, 
+                    zero_predictions : bool=False, 
+                    overlap_threshold : float=0.0, 
+                    check_duplicates : bool=False
+                    ) -> None:
             """
             Predicts segmentation labels for images in the specified directory using the initialized model. 
             Saves the predictions in a JSON file compatible with Label Studio.
@@ -291,14 +304,14 @@ class Prelabeler:
 
                 # CHECK 2 - Similar consecutive video frames
                 if check_duplicates and prev_boxes is not None:
-                    if self.same_prediction(prev_boxes, boxes, iou_threshold=0.90):
+                    if Prelabeler.same_prediction(prev_boxes, boxes, iou_threshold=0.90):
                         continue  # Skip that image
                 prev_boxes = boxes
 
                 # CHECK 3 - Overlapping labels
                 overlap_flag = False
                 if overlap_threshold > 0.0:
-                    overlap_flag = self.check_overlap(masks, boxes, overlap_threshold)
+                    overlap_flag = Prelabeler.check_overlap(masks, boxes, overlap_threshold)
 
                 # CHECK 4 - Low Confidence
                 lowconf_flag = False
@@ -350,8 +363,7 @@ class Prelabeler:
                 
             with open(os.path.join(self.output_dir, "seg_predictions.json"), "w", encoding="utf-8") as f:
                 json.dump(tasks, f, indent=2)
-            print(f"Saved {len(tasks)} tasks to {self.output_dir} seg_predictions.json")
-    
+            print(f"Saved {len(tasks)} tasks to {self.output_dir} seg_predictions.json")    
 
 
     def box_predict(self):

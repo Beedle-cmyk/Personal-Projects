@@ -294,6 +294,7 @@ names: ["Class1", "Class2", "Class3"]"""
             file.write(contents)
 
 
+    @staticmethod
     def get_labels_from_config(label_config : str | Path) -> list[str]:
         """
         Extracts labels from the LabelStudio Formatted xml configuration file for classes
@@ -313,6 +314,7 @@ names: ["Class1", "Class2", "Class3"]"""
         return labels
 
 
+    @staticmethod
     def _update_cfgs(cfg_dir : Path, yaml_path : Path, working_dir : Path) -> None:
         """
         Updates the yaml configuration files with the correct pathing
