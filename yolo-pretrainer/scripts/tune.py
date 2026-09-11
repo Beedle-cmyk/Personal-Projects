@@ -1,5 +1,5 @@
-from auto_trainer import AutoTrainer
-from config import (PROJECT_DIRECTORY, DATA_DIRECTORY, CURRENT_WORKING_PROJECT_DIRECTORY, UPDATE_ARGS_YAML_WITH_TUNED_ONES)
+from src.auto_trainer import AutoTrainer
+from src.config import (PROJECT_DIRECTORY, DATA_DIRECTORY, CURRENT_WORKING_PROJECT_DIRECTORY, UPDATE_ARGS_YAML_WITH_TUNED_ONES)
 
 """
 Begins model tuning using the current projects tune_args.yaml configuration file

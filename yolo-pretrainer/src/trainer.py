@@ -121,7 +121,7 @@ class Trainer:
             cfg (Path | str): yaml configuration file path (default is args.yaml)
             current_project_dir (Path | str): current working project's path
             tune (bool) : if true will begin or resume hyperparameter tuning
-            resume (str | Path | None) : if true will resume standard training
+            resume (str | Path | None) : path to .pt model file to resume from
 
         Raises:
             ValueError if a model name isn't found in the yaml config
@@ -193,6 +193,7 @@ class Trainer:
                 latest_checkpoint = max(checkpoints, key=lambda p : p.stat().st_mtime, default=None)
 
                 if latest_checkpoint:
+                    print(f"Found checkpoint: {latest_checkpoint}")
                     resume = latest_checkpoint
 
                 if attempt == MAX_RETRIES - 1:

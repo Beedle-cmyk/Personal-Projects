@@ -1,19 +1,22 @@
 from src.auto_trainer import AutoTrainer
-from src.config import (PROJECT_DIRECTORY, DATA_DIRECTORY, CURRENT_WORKING_PROJECT_DIRECTORY)
+from src.trainer import Trainer
+from src.config import (CURRENT_WORKING_PROJECT_DIRECTORY, ARGS_YAML_CONFIG, RESUME_MODEL)
 
 """
 Begins model training using the current projects args.yaml configuration file
+resume functionality is present within the trainer class if desired
 
 Requires:
-    PROJECT_DIRECTORY
-    DATA_DIRECTORY
     CURRENT_WORKING_PROJECT_DIRECTORY
+    ARGS_YAML_CONFIG
+
+Optional:
+    RESUME_MODEL
 """
 
-
 def main():
-    auto_trainer = AutoTrainer(proj_dir=PROJECT_DIRECTORY, data_dir=DATA_DIRECTORY)
-    auto_trainer.run(current_proj_dir=CURRENT_WORKING_PROJECT_DIRECTORY)
+    trainer = Trainer()
+    trainer.train(cfg=ARGS_YAML_CONFIG, current_proj_dir=CURRENT_WORKING_PROJECT_DIRECTORY, resume=RESUME_MODEL)
 
 if __name__ == "__main__":
     main()

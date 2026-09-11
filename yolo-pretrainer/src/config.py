@@ -39,6 +39,11 @@ LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
 # Enabling this will auto write the tuner recommended parameters from 'best_hyperparameters.yaml' to the current project's 'args.yaml'
 # This is used in tune.py
 UPDATE_ARGS_YAML_WITH_TUNED_ONES = False
+ARGS_YAML_CONFIG = CURRENT_WORKING_PROJECT_DIRECTORY / r"cfg/args.yaml"
+TUNE_ARGS_YAML_CONFIG = CURRENT_WORKING_PROJECT_DIRECTORY / r"cfg/tune_args.yaml"
+
+# Path to model if you would like to resume training from a checkpoint
+RESUME_MODEL = None
 
 # trainer.py maximum amount of times training attempts to resume
 MAX_RETRIES = 3
