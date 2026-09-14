@@ -1,142 +1,491 @@
-# Introduction
+# YOLO Active Learning Automation
 
-This is my personal library used to mostly automate the active learning process with yolo
+## Introduction
 
-# Getting Started
+This project is a personal library designed to automate much of the YOLO active learning workflow. It provides tools for:
 
-## Label Studio Setup Guide ##
-Download Label studio using the following guide https://labelstud.io/guide/install.html#Install-using-pip 
-Make sure to edit the label-studio.bat with text editor of your choice e.g. (notepad) file label studio directory path (the default is "C:\labelstudioenv\Scripts")
+- Managing YOLO training projects
+- Integrating with Label Studio
+- Generating prelabels using trained models
+- Training and hyperparameter tuning
+- Automating iterative active learning pipelines
 
-- setting up local storage
--- editing the bat file --
-set the LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT to one folder before the actual image folder
-e.g. if your data is in C:/projects/data/images/  set it to C:\\projects\\data  (use '\\' as label studio is sensitive)
+The goal is to reduce manual effort when creating, labeling, training, and improving YOLO datasets and models.
 
-Create a project -> Open project Settings -> Cloud Storage -> Add Source Storage -> Local Files -> Add e.g.  C:\\projects\\data\\images --> Test connection -> Change import method from 'Tasks' to 'Files' 
+---
 
-WARNING: If you are importing json labels DO NOT click 'Save & Sync' or duplicates will be created upon pressing this, just press "Save" then import your json labels and everything will work as intended. If you just want to start fresh without importing prelabels 'Save & Sync' works fine
+# Features
 
-Default Labelling interface can be found in borescope-yolo-training/src/cfg/label_config.xml, just copy paste it in the label studio Labelling Interface tab and click save
+- Label Studio integration
+- Automated project creation and management
+- YOLO model training
+- Hyperparameter tuning
+- Automatic prelabel generation
+- Active learning workflow automation
+- Live model inference
+- Dataset management utilities
+- Unit testing support
 
-Using the label_studio_manager.py class requires an API key. This can be found in Account & Settings -> Personal Access Token
-You may paste this in a fresh .env file (just create one and add the)
+---
 
-A useful feature of label studio is that if you are just importing labels. You don't have to edit the original data size.
-So if I have something like 20 image dataset, and label 5 of those images export a json. If I were to import that json file
-and the data directory is set to the location of the 20 image dataset, it will just import 5 of those images instead of having to manually filter everything yourself.
+# Installation
 
-# Create a new .env file in the base directory (the borescope-yolo-training/) with
-# API_KEY is not required to launch label studio
-API_KEY="Fill In API key here"
-LABEL_STUDIO_PATH="Fill in path to exe here"
+Clone the repository and install dependencies:
 
-# 1. Launch Label Studio
-python -m scripts.label_studio_launch.py
-
-# 2. Import an old/any project
-Ensure an instance of label studio is running on your computer
-python -m scripts.label_studio_setup_project
-
-# Very First Project
-1. Setup label studio using the guide if you have not
-2. Create a new project using either the Default Label Studio GUI or API in label_studio_manager class
-3. If you chose to use the GUI, fill in label studio interface manually or copy paste from the label_config.xml
-
-2. After labelling is complete, if segmentation export standard json, if box export 'YOLOv8 OBB'
-
-# Layout
-
-data/  
-    images/ <- image data is stored her
-docs/
-    YOLO Terminology Guide.txt  <- List of useful terminology in my own words
-projects/  <- Here is where my yolo training runs exist (model .pt file + statistics)
-scripts/
-    label_studio_launch.py  <- Launches Label Studio
-    label_studio_setup_project.py  <- Sets up a new project in label studio using the API
-    prelabel.py  <- Generates prediction labels for the images of your choice
-    setup_project.py <- This script generates and sets up a new Project
-    train.py  <- Begins model training using the current projects args.yaml configuration file
-    tune.py <- Begins model tuning using the current projects tune_args.yaml configuration file
-src/
-    cfg/
-        args.yaml <- contains template arguments for training a model
-        tune_args.yaml <- contains template arguments for hyperparameter tuning
-        label_config_seg <- contains the segmentaton labelling classes for Label Studio
-        label_config_box <- contains the OBB (boxes) labelling classes for Label Studio
-    utils/
-        brush.py  <- Label studio adapter tools from https://github.com/HumanSignal/label-studio-converter
-        ml_stratifiers <- training data split methods adapted from https://github.com/trent-b/iterative-stratification
-    config.py  <- central configuration for the script files and classes
-    project_manager.py <- class for creating and managing YOLO projects under my custom defined project structure 
-    label_studio_manager.py <- class containing optional utilities for interfacing with label studio
-    trainer.py <- class containing YOLO methods for optimized training & tuning of models
-    prelabeler.py <- class for prelabelling image datasets using YOLO models
-    auto_trainer.py <- Manager class where all class methods are combined to automate the full YOLO active learning pipeline
-    evaluator.py (INCOMPLETE) <- class to provide both qualitative and quantitative analysis of model performance for clients
-tests/
-    standard tests for all classes: test_prelabeler.py
-label-studio.bat <- bat file for launching label studio (please edit the executable path using a text editor e.g. notepad)
-
-
-# Work flow
-
-The AutoTrainer Class has this workflow:
-Note: You must have labelled data manually beforehand and have a currently working model
-
-Create a fresh project <--------------------------------------------
-setup                                          |
-            |                                                      |
-Evaluate best params for given model/data/use case
-            |                                                      |
-Train a model using newly labelled data
-            |                                                      |
-Prelabel unlabelled data with new model
-            |                                                      |
-Manually review and fix newly annotated data
-            |                                                      |
-Retrain until satisfied --------------------------------------------
-
-# Class Roles
-
-1 - Creating and managing a project - ProjectManager Class
-2 - Training a model - Trainer Class
-3 - Evaluating the best model, params, performance - Evaluator Class (INCOMPLETE)
-4 - Prelabel unlabelled data with that model - PreLabeler
-5 - Manually labelling & reviewing data - LabelStudioManager
-6 - Auto Trainer is the base class that integrates all these classes - AutoTrainer
-
-
-# One-time setup
+```bash
 pip install -r requirements.txt
+```
 
-# Data Pipeline
+---
 
-# 1. setting up a new project
-In src/config.py fill in: BASE_DIRECTORY, LABELS_JSON_FILE
+# Label Studio Setup
+
+## 1. Install Label Studio
+
+Follow the official installation guide:
+
+https://labelstud.io/guide/install.html#Install-using-pip
+
+---
+
+## 2. Configure `label-studio.bat`
+
+Open `label-studio.bat` with a text editor and update the Label Studio executable path.
+
+Example:
+
+```text
+C:\labelstudioenv\Scripts
+```
+
+---
+
+## 3. Configure Local Storage
+
+Set:
+
+```text
+LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT
+```
+
+to the directory **one level above** your image folder.
+
+Example:
+
+Dataset location:
+
+```text
+C:\projects\data\images
+```
+
+Configuration:
+
+```text
+C:\projects\data
+```
+
+**Important:** Use double backslashes (`\\`) as Label Studio can be sensitive to path formatting.
+
+---
+
+## 4. Connect Local Storage
+
+Within Label Studio:
+
+1. Create a project
+2. Open **Project Settings**
+3. Navigate to **Cloud Storage**
+4. Select **Add Source Storage**
+5. Choose **Local Files**
+6. Provide your image folder path
+
+Example:
+
+```text
+C:\projects\data\images
+```
+
+7. Click **Test Connection**
+8. Change Import Method from:
+
+```text
+Tasks
+```
+
+to
+
+```text
+Files
+```
+
+9. Save
+
+---
+
+## Importing Existing Labels
+
+### Warning
+
+If you are importing JSON annotations:
+
+**Do not click "Save & Sync".**
+
+Doing so can create duplicate tasks.
+
+Instead:
+
+1. Click **Save**
+2. Import your JSON annotations
+3. Continue working normally
+
+If you are starting a completely new project without importing labels, using **Save & Sync** is fine.
+
+---
+
+## Labeling Interface
+
+Default labeling interfaces are provided in:
+
+### Segmentation
+
+```text
+src/cfg/label_config_seg.xml
+```
+
+### OBB / Bounding Boxes
+
+```text
+src/cfg/label_config_box.xml
+```
+
+Copy the contents into the Label Studio **Labeling Interface** editor and save.
+
+---
+
+## API Key Configuration
+
+`LabelStudioManager` requires a Label Studio Personal Access Token.
+
+You can generate one from:
+
+```text
+Account & Settings -> Personal Access Token
+```
+
+Create a `.env` file in the project root:
+
+```env
+API_KEY="your_api_key_here"
+LABEL_STUDIO_PATH="path_to_label_studio_executable"
+```
+
+Example:
+
+```env
+API_KEY="abc123"
+LABEL_STUDIO_PATH="C:\labelstudioenv\Scripts\label-studio.exe"
+```
+
+---
+
+## Helpful Label Studio Behavior
+
+Label Studio only imports images referenced by the annotation file.
+
+Example:
+
+- Dataset contains 20 images
+- JSON contains labels for 5 images
+
+When importing the JSON, Label Studio automatically loads only those 5 images. There is no need to manually create a filtered dataset.
+
+---
+
+# Quick Start
+
+## Launch Label Studio
+
+```bash
+python -m scripts.label_studio_launch
+```
+
+## Import an Existing Project
+
+Ensure Label Studio is already running:
+
+```bash
+python -m scripts.label_studio_setup_project
+```
+
+---
+
+## Creating Your First Project
+
+1. Complete the Label Studio setup above.
+2. Create a new Label Studio project.
+3. Configure the labeling interface manually or using one of the provided XML files.
+4. Label some data.
+
+When exporting annotations:
+
+- Segmentation projects → **JSON**
+- OBB projects → **YOLOv8 OBB**
+
+---
+
+# Project Structure
+
+```text
+data/
+└── images/
+
+docs/
+└── YOLO Terminology Guide.txt
+
+projects/
+└── YOLO training projects
+
+scripts/
+├── label_studio_launch.py
+├── label_studio_setup_project.py
+├── prelabel.py
+├── setup_project.py
+├── train.py
+├── tune.py
+└── run_live.py
+
+src/
+├── cfg/
+│   ├── args.yaml
+│   ├── tune_args.yaml
+│   ├── label_config_seg.xml
+│   └── label_config_box.xml
+│
+├── utils/
+│   ├── brush.py
+│   └── ml_stratifiers/
+│
+├── config.py
+├── project_manager.py
+├── label_studio_manager.py
+├── trainer.py
+├── prelabeler.py
+├── auto_trainer.py
+└── evaluator.py
+
+tests/
+└── test_*.py
+
+label-studio.bat
+```
+
+---
+
+# Workflow
+
+The active learning cycle implemented by `AutoTrainer` is:
+
+```text
+Create Project
+      │
+      ▼
+Train Model
+      │
+      ▼
+Generate Prelabels
+      │
+      ▼
+Manually Review Labels
+      │
+      ▼
+Retrain Model
+      │
+      ▼
+Satisfied?
+  ├─ No ─────────────┐
+  │                  │
+  └──── Repeat ◄─────┘
+```
+
+### Requirements
+
+Before starting:
+
+- A manually labeled dataset must already exist.
+- A baseline model must already be available.
+
+---
+
+# Main Classes
+
+## ProjectManager
+
+Responsible for:
+
+- Project creation
+- Dataset management
+- Configuration management
+
+## Trainer
+
+Responsible for:
+
+- Model training
+- Hyperparameter tuning
+- Training result management
+
+## LabelStudioManager
+
+Responsible for:
+
+- Label Studio API integration
+- Project setup automation
+- Label Studio utility functions
+
+## PreLabeler
+
+Responsible for:
+
+- Running YOLO predictions
+- Generating labels for unlabeled data
+
+## Evaluator *(Work In Progress)*
+
+Planned functionality:
+
+- Quantitative model evaluation
+- Qualitative model review
+- Client-facing performance reporting
+
+## AutoTrainer
+
+The central orchestration class that combines all project components into a complete active learning pipeline.
+
+---
+
+# Training Pipeline
+
+## 1. Create a New Project
+
+Update the following values in `src/config.py`:
+
+```python
+BASE_DIRECTORY
+LABELS_JSON_FILE
+```
+
+Run:
+
+```bash
 python -m scripts.setup_project
+```
 
-# 2. begin training run
-In src/config.py fill in: CURRENT_WORKING_PROJECT_DIRECTORY
-If desired edit arguments in your project /cfg/args.yaml
+---
+
+## 2. Train a Model
+
+Update:
+
+```python
+CURRENT_WORKING_PROJECT_DIRECTORY
+```
+
+Optionally edit:
+
+```text
+project/cfg/args.yaml
+```
+
+Run:
+
+```bash
 python -m scripts.train
+```
 
-# (optional) tuning a model
-In src/config.py fill in: UPDATE_ARGS_YAML_WITH_TUNED_ONES, CURRENT_WORKING_PROJECT_DIRECTORY
-If desired edit arguments in your project /cfg/tune_args.yaml
+---
+
+## 3. Hyperparameter Tuning (Optional)
+
+Update:
+
+```python
+UPDATE_ARGS_YAML_WITH_TUNED_ONES
+CURRENT_WORKING_PROJECT_DIRECTORY
+```
+
+Optionally edit:
+
+```text
+project/cfg/tune_args.yaml
+```
+
+Run:
+
+```bash
 python -m scripts.tune
+```
 
-# 3. run the model live (non-InspectStudio Application)
-In src/config.py fill in: MODEL_FOR_PREDICTIONS, MIN_CONF, MAX_CONF, LIVE_FEED
+---
+
+## 4. Run Live Inference
+
+Update:
+
+```python
+MODEL_FOR_PREDICTIONS
+MIN_CONF
+MAX_CONF
+LIVE_FEED
+```
+
+Run:
+
+```bash
 python -m scripts.run_live
+```
 
-# 4. generate Label Studio predictions on new data using the model
-In src/config.py fill in: MODEL_FOR_PREDICTIONS, MIN_CONF, MAX_CONF, IMAGES_TO_PREDICT
+---
+
+## 5. Generate Prelabels
+
+Update:
+
+```python
+MODEL_FOR_PREDICTIONS
+MIN_CONF
+MAX_CONF
+IMAGES_TO_PREDICT
+```
+
+Run:
+
+```bash
 python -m scripts.prelabel
+```
 
-# run tests
+---
+
+# Testing
+
+Run all tests:
+
+```bash
 python -m pytest
+```
+
+---
+
+# Acknowledgements
+
+The following utilities are adapted from existing open-source projects:
+
+- Label Studio Converter: https://github.com/HumanSignal/label-studio-converter
+- Iterative Stratification: https://github.com/trent-b/iterative-stratification
+
+---
 
 # TODO
-- Prelabeler Review Flagging
+
+- [ ] Prelabel review flagging
+- [ ] Complete evaluator implementation
+- [ ] Improve automated active learning reporting
