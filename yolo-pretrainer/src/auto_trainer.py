@@ -1,6 +1,6 @@
 from src.project_manager import ProjectManager
 from src.trainer import Trainer
-from src.evaluator import Evaluator
+from src.evaluator import Evaluator  #TODO Create and Implement Evaluator Class
 from src.prelabeler import Prelabeler
 from src.label_studio_manager import LabelStudioManager
 from pathlib import Path
@@ -10,14 +10,19 @@ import yaml
 import shutil
 
 class AutoTrainer:
-    """ Manager class where all class methods are combined to automate the full YOLO fine tuning pipeline
+    """ Manager class where all class methods are combined to automate the full YOLO active learning pipeline
 
     @author: Sami Ibrahim
     @version: 8/21/2026
     
     Methods:
         __init__: Initializes class object and attributes
-
+        setup_project :  Sets up a new project by creating the necessary directory structure & converting Label Studio JSON labels to YOLO format if provided
+        cleanup_images : Helper Method for providing cleaning up data such that the label/class count matches the data count
+        run : Default training/tuning method that creates a new project and trains the model with the provided yaml file
+        default_prelabel : Standard prelabelling with no filter flags using the prelabeler class
+        update_best_hyperparameters : Update the current project's args.yaml with tuned hyperparameters generated from a tune run
+ 
     """
 
     def __init__(self, 

@@ -2,7 +2,8 @@ from src.label_studio_manager import LabelStudioManager
 from src.config import (API_KEY, LABEL_CONFIG_RAW, DATA_DIRECTORY, LABEL_STUDIO_EXE, LABELS_JSON_FILE)
 
 """
-You must ensure an instance of label studio is running
+## You must ensure an instance of label studio is running! ##
+
 Sets up a new project in label studio with the provided labelling interface, data directory & optionally labels json file
 Make sure to setup local storage as per README.md guide
 

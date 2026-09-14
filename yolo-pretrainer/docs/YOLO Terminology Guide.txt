@@ -3,7 +3,7 @@ args: imgsz, epochs, batch
 
 imgsz : 
 The model scales the training images to this size e.g. imgsz = 640 will scale to 640x640
-Greater image size results in more details being scanned by model so greater accuracy
+Greater image size results in more details being scanned by model so greater accuracy,
 However slower inference time, greater latency, lower FPS and longer training times
 
 epochs :
@@ -11,16 +11,18 @@ The amount of passes the models makes through the entire dataset
 The model adjusts its weightings through each pass resulting in higher accuracy
 However more complex models with too many passes can result in overfitting due to the model memorizing details
 e.g. if debris is often positioned in the top left corner model will think top left corner = debris or
-if scratch pictures are only under a certain brightness, it will assume that brightness means scratches
+if scratch pictures are only under a certain brightness, it will assume that brightness = scratches
 Also there reaches a point where no/diminishing returns are reached
 So the general rule is larger dataset = fewer Epochs and vice-versa smaller set=more epochs
-E.G. LLMs use 1-3 epochs generally (Pretty cool right)
+e.g. LLMs use 1-3 epochs generally (Pretty cool right) due to their extremely large dataset
 
 batch :
 Represents the number of images the model runs through before adjusting its weights.
 	
-	
-	Epoch n:   Adjust weightings by marching through each image in batches
+================================================================================
+ General outline of the steps taken on a training run
+================================================================================
+	Epoch n:   Adjust weightings by marching through each image in batches (e.g. update weights every 16 batches so 16 images)
 			   Calculate model confidence
          
 		  COMPLETE
@@ -31,9 +33,9 @@ Represents the number of images the model runs through before adjusting its weig
 			 3) Tally False Positives, True Positives, False Negatives via IOU threshold e.g. >= 0.5 FOR THAT confidence threshold
 			 4) Calculate Recall and Precision e.g. (R, P) = (0.8, 0.2)
 			 5) Proceed to next confidence threshold e.g. confidence >= 0.2 and repeat
-			 6) Plot points and construct graph for Precision-Recall, Precision-confidence, Recall-confidence, F1 Confidence
+			 6) Plot points and construct graph for Precision-Recall, Precision-confidence, Recall-confidence, F1-Confidence
 			 NOTE: So typically the BoxPR_curve.png generated is for the final epoch or best epoch only so e.g. Epoch 100 
-			 7) Advance to next epoch
+			 7) Advance to next epoch (n + 1)
 			 
 
 Precision =  True Positives / (True Positives + False Positives)
@@ -48,17 +50,19 @@ IoU = Intersection / Union
 - e.g. if IoU >= 0.5 (atleast 50% of the boxes overlap), and the IoU for that specific detection is 0.68 then it is a True Positive
 - If it is 0.38 (below 0.5) it is a False Positive, if not detected at all then a False Negative.
 
-train and metrics/val
+train and metrics/val (in post-training generated graphs)
 - Everything under the metrics/* or val/* is calculated on the validation set
 - Everything under train/* like train/box_loss are calculated for every batch e.g. (if batch size is 12 it is averaged), and compared to 
-  the training sets actual ground truth, then used to update the model weights by the optimizer
+  the training sets actual ground truth (actual correct labels), then used to update the model weights by the optimizer
 
 -----------------------
 Precision-Recall Graph
 -----------------------
+It is plotted using the points (Recall, Precision) taken at different confidence values (explained in the steps 1-6)
+
 What can we infer from it?
 -Many stops/points on curve means a lot of data for that specific class/anomaly 
-so vice versa too few stops (too box-like) means not a lot of instances of that anomaly
+so vice versa too few stops means not a lot of instances of that anomaly
 -Having the curves being more towards the top right is ideal so that the precision-recall values are higher
 since they have an inverse relationship given that    -   less dections means less false positives (less anomalies flagged incorrectly) so higher precision, 
 more detections means less anomalies missed (if you flag everything - even if incorrect - you've essenitally missed nothing) so higher recall
@@ -80,7 +84,7 @@ Correctly classifies them
 Produces few false positives
 Draws bounding boxes that closely match the ground truth
 - ground truth is just the "correct" or "original" labels
-Maintains good performance even under very strict IoU requirements
+Maintains good performance even under very strict IoU requirements (meaning very tight boxes)
 
 A high mAP50 but a significantly lower mAP50-95 indicates your model finds objects well, but struggles to draw tightly precise boundaries around them
 
@@ -96,13 +100,14 @@ AP (Average Precision) evaluates the overall quality of the detector across all 
 F1 is measured for one confidence threshold
 F1 helps choose a single confidence threshold to use in practice.
 
+Used copilot in case of difficulty in my explanation:
 F1 = "What's the best balance of precision and recall I can achieve?"
-mAP50 = "How good is the detector overall regardless of threshold?"
+mAP50 = "How good is the detector overall regardless of confidence threshold?"
 
 ------------------
 Confusion Matrix
 ------------------
-Self-explanatory just statistics on what the model detected the anomaly as. e.g. Howmany scratches were detected as debris
+Self-explanatory: just statistics on what the model detected the anomaly as. e.g. Howmany scratches were detected as debris
 Normalized just sets it as a percentage of the amount of labels so 0.3 (30%) of scracthes were detected as debris, etc.
 
 --------------------------
@@ -127,7 +132,7 @@ cls_loss "Did I correctly identify what this object is?"
 box_loss "Did I tightly frame the object in the right spot?"
 dfl_loss "How confident am I about the exact edges of the box?"
 
-params
+params (when choosing a model on the yolo website they have these as categories)
 -typically the yolo website has params that show the number of learnable weights and biases 
  in the neural network
  e.g. 2 M = 2 million parameters
@@ -168,7 +173,7 @@ params: iterations
 -use_ray=True you can have multiple trials run simultaneously if you want
 -Choose it based on computing power available, time constraints and generally start at 50-300 (I use 300)
 
-Ideally you determine batch size, epochs and imgsz first before running it
+Ideally you determine batch size, epochs and imgsz first before running it (may change depending on data size)
 
 Train baseline
       ↓

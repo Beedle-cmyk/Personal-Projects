@@ -1,4 +1,3 @@
-from src.auto_trainer import AutoTrainer
 from src.trainer import Trainer
 from src.config import (CURRENT_WORKING_PROJECT_DIRECTORY, ARGS_YAML_CONFIG, RESUME_MODEL)
 

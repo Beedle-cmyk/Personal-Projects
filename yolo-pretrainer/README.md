@@ -2,14 +2,82 @@
 
 This is my personal library used to mostly automate the active learning process with yolo
 
+
+# Layout
+
+data/  
+    images/ <- image data is stored her
+docs/
+    YOLO Terminology Guide.txt  <- List of useful terminology in my own words
+projects/  <- Here is where my yolo training runs exist (model .pt file + statistics)
+scripts/
+    label_studio_launch.py  <- Launches Label Studio
+    label_studio_setup_project.py  <- Sets up a new project in label studio using the API
+    prelabel.py  <- Generates prediction labels for the images of your choice
+    setup_project.py <- This script generates and sets up a new Project
+    train.py  <- Begins model training using the current projects args.yaml configuration file
+    tune.py <- Begins model tuning using the current projects tune_args.yaml configuration file
+src/
+    cfg/
+        args.yaml <- contains template arguments for training a model
+        tune_args.yaml <- contains template arguments for hyperparameter tuning
+        label_config_seg <- contains the segmentaton labelling classes for Label Studio
+        label_config_box <- contains the OBB (boxes) labelling classes for Label Studio
+    utils/
+        brush.py  <- Label studio adapter tools from https://github.com/HumanSignal/label-studio-converter
+        ml_stratifiers <- training data split methods adapted from https://github.com/trent-b/iterative-stratification
+    config.py  <- central configuration for the script files and classes
+    project_manager.py <- class for creating and managing YOLO projects under my custom defined project structure 
+    label_studio_manager.py <- class containing optional utilities for interfacing with label studio
+    trainer.py <- class containing YOLO methods for optimized training & tuning of models
+    prelabeler.py <- class for prelabelling image datasets using YOLO models
+    auto_trainer.py <- Manager class where all class methods are combined to automate the full YOLO active learning pipeline
+    evaluator.py (INCOMPLETE) <- class to provide both qualitative and quantitative analysis of model performance for clients
+tests/
+    standard tests for all classes: test_prelabeler.py
+label-studio.bat <- bat file for launching label studio (please edit the executable path using a text editor e.g. notepad)
+
+
+# One-time setup
+pip install -r requirements.txt
+
+# Data Pipeline
+
+# (optional) create a new .env file in the base directory (the borescope-yolo-training/) with
+API_KEY="Fill In API key here"
+LABEL_STUDIO_PATH="Fill in path to exe here"
+
+# 1. setting up a new project
+In src/config.py fill in: BASE_DIRECTORY, LABELS_JSON_FILE
+python -m scripts.setup_project
+
+# 2. begin training run
+In src/config.py fill in: CURRENT_WORKING_PROJECT_DIRECTORY
+If desired edit arguments in your project /cfg/args.yaml
+python -m scripts.train
+
+# (optional) tuning a model
+In src/config.py fill in: UPDATE_ARGS_YAML_WITH_TUNED_ONES, CURRENT_WORKING_PROJECT_DIRECTORY
+If desired edit arguments in your project /cfg/tune_args.yaml
+python -m scripts.tune
+
+# 3. run the model live (Non-InspectStudio)
+In src/config.py fill in: MODEL_FOR_PREDICTIONS, MIN_CONF, MAX_CONF, LIVE_FEED
+python -m scripts.run_live
+
+# 4. generate Label Studio predictions using the model
+In src/config.py fill in: MODEL_FOR_PREDICTIONS, MIN_CONF, MAX_CONF, IMAGES_TO_PREDICT
+python -m scripts.prelabel
+
+
 # Class Roles
 
 1 - Creating and managing a project - ProjectManager Class
 2 - Training a model - Trainer Class
-3 - Evaluating the best model, params, performance - Evaluator Class
+3 - Evaluating the best model, params, performance - Evaluator Class (INCOMPLETE)
 4 - Prelabel unlabelled data with that model - PreLabeler
-5 - Manually reviewing data - LabelStudioManager
-6 - Auto Trainer is the base class that integrates all these classes
+5 - Manually labelling & reviewing data - LabelStudioManager
+6 - Auto Trainer is the base class that integrates all these classes - AutoTrainer
 
 # Work flow
 
@@ -17,14 +85,12 @@ The AutoTrainer Class has this workflow:
 Note: You must have labelled data manually beforehand and have a currently working model
 
 Create a fresh project <--------------------------------------------
-(autotrain.setup_project)                                          |
+setup                                          |
             |                                                      |
 Evaluate best params for given model/data/use case
-(autotrain.run(tune=True))
+(INCOMPLETE)
             |                                                      |
 Train a model using newly labelled data
-(autotrain.update_best_hyperparameters)
-(autotrain.run(args_yaml="path to best_yaml"))
             |                                                      |
 Evaluate generated statistics with report
             |                                                      |
@@ -70,7 +136,7 @@ run python -m scripts.label_studio_setup_project
 
 2. After labelling is complete, if segmentation export standard json, if box export 'YOLOv8 OBB'
 3. Create a project via the project_manager.py method create_project() recommended to set the data_dir parameter to your data path
-4. 
+
 
 # TODO
 

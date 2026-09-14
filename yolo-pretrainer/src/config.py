@@ -22,17 +22,15 @@ CFG_DIRECTORY = BASE_DIRECTORY / r"src/cfg"
 # Provide a label studio exported json file e.g. yolo26_v2.1_seg_234.json
 LABELS_JSON_FILE = r"FILL THIS IN!"
 
-# Create a project using setup_project.py first before setting this
+# Create a project using setup_project.py first before setting this!!!!! (so run setup_project.py beforehand)
 CURRENT_WORKING_PROJECT_DIRECTORY = PROJECT_DIRECTORY / r"FILL THIS IN!"  #e.g. yolo26_v1.2_seg_2808
 # ---------------------------------------------------------------------------------------------------------------------- #
-
 
 
 # ------------------------------------------- environ (private data) ---------------------------------------------------------- #
 API_KEY = os.environ["API_KEY"]
 LABEL_STUDIO_EXE = os.environ["LABEL_STUDIO_PATH"]
 # ----------------------------------------------------------------------------------------------------------------------------- #
-
 
 
 # --------------------------Labelling Interface Templates (Copy-pasted from label studio) --------------------- #
@@ -43,7 +41,6 @@ LABEL_CONFIG_SEG = CFG_DIRECTORY / r"label_config_seg.xml"
 LABEL_CONFIG = LABEL_CONFIG_SEG
 LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
 # ------------------------------------------------------------------------------------------------------------- #
-
 
 
 # --------------------------------------Training Args Configs-------------------------------------------------- #
@@ -61,10 +58,10 @@ MAX_RETRIES = 3
 # ------------------------------------------------------------------------------------------------------------- #
 
 
-
 # --------------------------------------Prediction/Prelabelling Args Configs-------------------------------------------------- #
 # Model path e.g. to best.pt used for predictions or prelabelling
-MODEL_FOR_PREDICTIONS = r"FILL THIS IN!"
+MODEL_FOR_PREDICTIONS = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v2.1_seg_234\runs\train_yolo26s-seg_imgsz_640_epochs_100\weights\best.pt"
+LIVE_FEED = 0  # Use 0 for built-in webcam, 1 or higher for external USB cameras
 MIN_CONF = 0.25
 MAX_CONF = 1.0
 IMAGES_TO_PREDICT = r"FILL THIS IN!"
