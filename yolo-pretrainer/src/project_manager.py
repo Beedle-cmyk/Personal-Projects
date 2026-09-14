@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.config import (CFG_DIRECTORY)
+from src.config import CFG_DIRECTORY
 
 import xml.etree.ElementTree as ET
 

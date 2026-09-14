@@ -28,8 +28,8 @@ CURRENT_WORKING_PROJECT_DIRECTORY = PROJECT_DIRECTORY / r"FILL THIS IN!"  #e.g. 
 
 
 # ------------------------------------------- environ (private data) ---------------------------------------------------------- #
-API_KEY = os.environ["API_KEY"]
-LABEL_STUDIO_EXE = os.environ["LABEL_STUDIO_PATH"]
+API_KEY = os.getenv("API_KEY")
+LABEL_STUDIO_EXE = os.getenv("LABEL_STUDIO_PATH")
 # ----------------------------------------------------------------------------------------------------------------------------- #
 
 
@@ -39,7 +39,10 @@ LABEL_CONFIG_SEG = CFG_DIRECTORY / r"label_config_seg.xml"
 
 # SET LABEL_CONFIG for either segmentation or box; Default is segmentation
 LABEL_CONFIG = LABEL_CONFIG_SEG
-LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
+if LABEL_CONFIG.exists():
+    LABEL_CONFIG_RAW = Path(LABEL_CONFIG).read_text(encoding="utf-8")
+else:
+        LABEL_CONFIG_RAW = ""
 # ------------------------------------------------------------------------------------------------------------- #
 
 
@@ -60,7 +63,7 @@ MAX_RETRIES = 3
 
 # --------------------------------------Prediction/Prelabelling Args Configs-------------------------------------------------- #
 # Model path e.g. to best.pt used for predictions or prelabelling
-MODEL_FOR_PREDICTIONS = r"C:\Personal-Projects\yolo-pretrainer\projects\yolo26_v2.1_seg_234\runs\train_yolo26s-seg_imgsz_640_epochs_100\weights\best.pt"
+MODEL_FOR_PREDICTIONS = r"FILL THIS IN!"
 LIVE_FEED = 0  # Use 0 for built-in webcam, 1 or higher for external USB cameras
 MIN_CONF = 0.25
 MAX_CONF = 1.0

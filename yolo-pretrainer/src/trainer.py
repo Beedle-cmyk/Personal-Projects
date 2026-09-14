@@ -4,7 +4,7 @@ from ultralytics import YOLO
 from src.utils import ml_stratifiers
 from collections import Counter
 import matplotlib.pyplot as plt
-from src.config import (MAX_RETRIES)
+from src.config import MAX_RETRIES
 
 import os
 import shutil
@@ -335,6 +335,10 @@ class Trainer:
         print("\nCopying training files...")
         for image_id in train_images:
             image_file = find_image(image_id)
+            if image_file is None:
+                print(f"WARNING: No image found for '{image_id}', skipping.")
+                continue
+
             label_file = input_label_path / f"{image_id}.txt"
 
             shutil.copy2(image_file, train_img_path / image_file.name)
@@ -346,6 +350,7 @@ class Trainer:
 
             image_file = find_image(image_id)
             if image_file is None:
+                print(f"WARNING: No image found for '{image_id}', skipping.")
                 continue
 
             label_file = input_label_path / f"{image_id}.txt"

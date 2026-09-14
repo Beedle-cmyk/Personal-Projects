@@ -16,8 +16,8 @@ Requires:
 Optional:
     LABELS_JSON_FILE
 """
-
-lsManager = LabelStudioManager(api_key=API_KEY, data_dir=DATA_DIRECTORY, ls_path=LABEL_STUDIO_EXE, launch=False)
+data_dir = DATA_DIRECTORY.parent
+lsManager = LabelStudioManager(api_key=API_KEY, data_dir=str(data_dir), ls_path=LABEL_STUDIO_EXE, launch=False)
 title = str(input("Enter Project Title: "))
 lsManager.create_project(title=title, label_config=LABEL_CONFIG_RAW)
 

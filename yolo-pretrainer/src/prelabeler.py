@@ -3,7 +3,6 @@ from pathlib import Path
 from src.label_studio_manager import LabelStudioManager
 from tqdm import tqdm
 
-import torch
 import json
 import os
 
@@ -260,6 +259,8 @@ class Prelabeler:
 
             When parameters set filteres a segmentation/mask dataset for manual review and adds 
             images with the following behavior to a review dataset
+
+            Notes: Flags are EXPERIMENTAL and not fully implemented yet
 
             Args:
                 conf_threshold (float): flags images with predictions below this confidence score
